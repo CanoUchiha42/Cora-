@@ -39,7 +39,7 @@ function normalize(value){return String(value||"").toLowerCase().replace(/ä/g,"
 function detectIndustry(text){
  const t=normalize(text);
  const patterns={
-  WHOLESALE_MOBILE:["grosshandel mobilfunk","mobilfunk grosshandel","grosshandel fuer mobilfunk","grosshandel für mobilfunk","mobilfunk grosshandel und zubehoer","mobilfunk und zubehoer grosshandel","mobilfunk zubehoer grosshandel","telekommunikationsgrosshandel","telekommunikation grosshandel"],
+  WHOLESALE_MOBILE:["grosshandel mobilfunk","mobilfunk grosshandel","grosshandel fuer mobilfunk","mobilfunk grosshandel und zubehoer","mobilfunk und zubehoer grosshandel","mobilfunk zubehoer grosshandel","telekommunikationsgrosshandel","telekommunikation grosshandel","gross und aussenhandel mobilfunk","grosshandel und aussenhandel mobilfunk","gross und aussenhandel","grosshandel","grosshaendler","grosshandel mobilfunk und zubehoer"],
   BEAUTY:["kosmetiksalon","kosmetiksaloon","kosmetiksalons","kosmetik salon","beautysalon","beauty salon","nagelstudio","friseursalon","friseur","wimpern","gesichtsbehandlung","haarentfernung","aesthetik"],
   FITNESS:["fitnessstudio","fitness studio","fitness","probetraining","mitgliedschaft","personal training"],
   SHK:["heizung","heizungsbau","heizungsbauer","waermepumpe","sanitaer","sanitaerbetrieb","shk","badsanierung","klima","wasserinstallation"],
@@ -52,7 +52,7 @@ function detectIndustry(text){
   TAX_ADVISOR:["steuerberater","steuerberatung","steuerkanzlei"],
   CRAFT:["handwerksbetrieb","handwerker","meisterbetrieb","elektriker","maler","bauunternehmen"]
  };
- for(const [id,words] of Object.entries(patterns)){if(words.some(w=>t.includes(w)))return id;}
+ for(const [id,words] of Object.entries(patterns)){if(words.some(w=>t.includes(w)))return id;} if(/gross|aussenhandel/.test(t)&&/mobilfunk|telekommunikation|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
  return null;
 }
 
@@ -73,7 +73,8 @@ function responseForKnownGoal(){
  const data=industryData[state.industry];
  if(!data)return "Ihr Ziel ist klar: mehr qualifizierte Kundenkontakte. Cora kann Besucher informieren, Bedarf konkretisieren und bei echtem Interesse eine strukturierte Anfrage vorbereiten. Welche Branche oder welches Geschäftsmodell möchten Sie mit Cora abbilden?";
  const q=data.questions[Math.min(state.conversation.questionIndex, data.questions.length-1)];
- return "Verstanden. Ihr Ziel ist bereits erfasst: mehr qualifizierte Kundenkontakte.\\n\\nCora kann dabei drei Dinge verbinden: Fragen sofort beantworten, den konkreten Bedarf des Besuchers herausarbeiten und – wenn echtes Interesse besteht – eine strukturierte Anfrage vorbereiten. Das Ergebnis ist nicht nur ein Kontakt, sondern mehr verwertbarer Kontext für Ihr Team.\\n\\nFür Ihren "+industryLabels[state.industry]+" ist jetzt entscheidend, welche Leistung oder welches konkrete Anliegen hinter dem Kontakt steckt. "+q;
+ state.stage="qualification";state.conversation.leadMode=true;
+ return "Verstanden. Sie möchten über Ihre Website mehr qualifizierte Kundenkontakte gewinnen. Das lässt sich konkret auf Ihren Vertrieb übertragen.\\n\\nBei einem "+industryLabels[state.industry]+" kann Cora zum Beispiel erkennen, wer anfragt, wonach gesucht wird und ob bereits ein konkreter geschäftlicher Bedarf besteht. Sie führt den Besucher dabei nicht sofort zu einem Kontaktformular, sondern klärt zuerst das Anliegen und baut daraus eine verwertbare Anfrage auf.\\n\\nDamit wir das realistisch testen: "+q;
 }
 
 function directAnswer(text){
