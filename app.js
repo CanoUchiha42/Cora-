@@ -337,16 +337,26 @@ document.querySelectorAll("[data-prompt]").forEach(btn=>{
  btn.addEventListener("click",()=>runDemo(btn.dataset.prompt));
 });
 
+const demoSend=document.getElementById("demoSend");
+function submitDemoQuestion(){
+ const value=demoInput?.value||"";
+ if(!value.trim())return;
+ if(demoSend)demoSend.disabled=true;
+ demoInput.value="";
+ runDemo(value);
+ setTimeout(()=>{if(demoSend)demoSend.disabled=false;demoInput?.focus();},450);
+}
+demoSend?.addEventListener("click",submitDemoQuestion);
+demoInput?.addEventListener("keydown",e=>{
+ if(e.key==="Enter"){
+  e.preventDefault();
+  e.stopPropagation();
+  submitDemoQuestion();
+ }
+});
 demoForm?.addEventListener("submit",e=>{
  e.preventDefault();
  e.stopPropagation();
- const value=demoInput?.value||"";
- if(!value.trim())return;
- const button=demoForm.querySelector('button[type="submit"]');
- if(button)button.disabled=true;
- demoInput.value="";
- runDemo(value);
- setTimeout(()=>{if(button)button.disabled=false;demoInput.focus();},380);
 });
 
 const roiEls={
