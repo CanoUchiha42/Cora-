@@ -195,6 +195,14 @@ function answerIndustry(q){
  if(!data)return null;
 
  if(/welches paket|welches produkt|was passt|welcher tarif|basic|pro|enterprise|geeignetsten|geeignetste|am besten|empfehl/.test(t)){
+  const asksForHelp=/wie hilft|wie kannst|was kann|was bietet|welchen mehrwert|mehrwert|wie funktioniert|einsatz|nutzen|hilft/.test(t);
+  if(asksForHelp){
+   const label=industryLabels[state.industry]||"Unternehmen";
+   const packageText=state.industry==="BEAUTY"
+    ? "Für einen Kosmetiksalon ist Pro besonders relevant, wenn Cora nicht nur Leistungen erklären, sondern Besucher aktiv zu qualifizierten Termin- oder Beratungsanfragen führen soll. Basic reicht eher dann, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Enterprise wird erst bei komplexeren individuellen Anforderungen interessant."
+    : packageRecommendation(state.industry);
+   return packageText+"\n\n"+data.intro+"\n\nKonkrete Einsatzfälle für Ihren Betrieb:\n• "+data.capabilities.join("\n• ")+"\n\nDer konkrete Mehrwert: Besucher erhalten sofort Orientierung, Cora erkennt ihr Anliegen und fragt gezielt die Informationen ab, die für eine verwertbare Anfrage nötig sind. Ihr Team erhält dadurch bereits strukturierte Angaben, statt bei jedem Kontakt wieder bei null zu beginnen.\n\nDamit ich den Einsatz direkt auf Ihren Betrieb zuschneiden kann: "+data.flow[0];
+  }
   return packageRecommendation(state.industry);
  }
 
