@@ -103,146 +103,131 @@ function responseForKnownGoal(){
  return "Verstanden. Sie möchten über Ihre Website mehr qualifizierte Kundenkontakte gewinnen. Das lässt sich konkret auf Ihren Vertrieb übertragen.\\n\\nBei einem "+industryLabels[state.industry]+" kann Cora zum Beispiel erkennen, wer anfragt, wonach gesucht wird und ob bereits ein konkreter geschäftlicher Bedarf besteht. Sie führt den Besucher dabei nicht sofort zu einem Kontaktformular, sondern klärt zuerst das Anliegen und baut daraus eine verwertbare Anfrage auf.\\n\\nDamit wir das realistisch testen: "+q;
 }
 
-function directAnswer(text){
+function classifyIntent(text){
  const t=normalize(text);
- if(/was kann cora|was macht cora|wie hilft cora|wofuer|wofür|wie generiert cora|wie bekommt cora|wie sammelt cora/.test(t))
-   return "Cora arbeitet im Kern wie ein digitaler Erstkontakt im Vertrieb: **1. Besucherfrage beantworten → 2. Anliegen erkennen → 3. Bedarf konkretisieren → 4. passende Rückfragen stellen → 5. qualifizierte Anfrage an den nächsten Kontaktpunkt übergeben.** Dabei soll Cora keine langen Fragebögen abarbeiten, sondern nur Informationen erfassen, die für den jeweiligen Vertriebsprozess relevant sind.";
- if(/lead erfassen|leads erfassen|kundenkontakte erfassen|kontakt erfassen|lead sammeln|lead sammlen|leads sammeln/.test(t))
-   return "Ja. Cora kann einen Website-Besucher nicht nur nach Name und E-Mail fragen, sondern den geschäftlichen Kontext davor erfassen: Was wird gesucht, für welchen Zweck, mit welcher Dringlichkeit und welcher gewünschte nächste Schritt? Dadurch erhält der Vertrieb eine Anfrage mit Kontext statt nur einen Kontaktdatensatz.";
- if(/einrichtung|integration|einbinden|crm|kalender|api|n8n/.test(t))
-   return "Die Einrichtung wird auf den tatsächlichen Vertriebsprozess zugeschnitten: Wissen, Zielgruppen, Gesprächswege, Qualifikationskriterien, Übergabe und Kontaktziel. Je nach Projekt können anschließend CRM, E-Mail, Kalender oder Automatisierungen angebunden werden.";
- return null;
+ if(/neu starten|reset|von vorne/.test(t))return "reset";
+ if(/preis|preise|kosten|monatlich|einmalig|setup|einrichtungskosten|was kostet/.test(t))return "pricing";
+ if(/dsgvo|datenschutz|daten|speicher|server|eu|av/.test(t))return "privacy";
+ if(/integration|crm|kalender|api|n8n|hubspot|salesforce|pipedrive|email|e mail|uebergabe/.test(t))return "integration";
+ if(/wie funktioniert|wie arbeitet|wie genau|was macht cora|was kann cora|wie hilft|mehrwert|nutzen|vorteil/.test(t))return "how";
+ if(/lead|leads|kundenkontakt|kundenkontakte|kunden gewinnen|mehr kunden|mehr anfragen|anfrage|qualifiz/.test(t))return "lead";
+ if(/branche|unternehmen|firma|geschaeft|geschaeftsmodell/.test(t))return "industry";
+ if(/basic|pro|enterprise|paket|tarif|welches paket|welcher tarif|was passt|geeignet/.test(t))return "package";
+ if(/beispiel|use case|anwendungsfall|anwendungsfaelle|simulier|testen|test/.test(t))return "example";
+ if(/termin|beratung|gespraech|kontakt|anrufen|rueckruf/.test(t))return "contact";
+ if(/roi|umsatz|conversion|abschlussquote|besucher/.test(t))return "roi";
+ return "general";
 }
 
-function packageForIndustry(){
- if(["WHOLESALE_MOBILE","BEAUTY","FITNESS","AUTOHAUS","SHK","REAL_ESTATE","CRAFT"].includes(state.industry))return packageGuidance.PRO;
- return packageGuidance.BASIC+" "+packageGuidance.PRO;
+function leadQuestion(){
+ const data=industryData[state.industry];
+ if(!data)return "Welche Branche oder welches Geschäftsmodell möchten Sie mit Cora abbilden?";
+ const idx=Math.min(state.conversation.questionIndex,data.questions.length-1);
+ return data.questions[idx];
+}
+
+function profileSummary(){
+ const p=state.profile,parts=[];
+ if(state.industry)parts.push(industryLabels[state.industry]);
+ if(p.goal)parts.push("Ziel: "+p.goal);
+ if(p.need)parts.push("Bedarf: "+p.need);
+ if(p.customerType)parts.push("Rolle/Kundentyp: "+p.customerType);
+ if(p.intent)parts.push("Absicht: "+p.intent);
+ if(p.timing)parts.push("Zeitraum: "+p.timing);
+ return parts.join(" · ");
+}
+
+function directAnswer(text){
+ const intent=classifyIntent(text);
+ if(intent==="how")return "Cora arbeitet als digitaler Erstkontakt auf Ihrer Website. Sie beantwortet zunächst die konkrete Frage, erkennt anschließend das Anliegen und entscheidet anhand des Gesprächs, welche Information als Nächstes wirklich relevant ist. Bei einem Vertriebsziel kann daraus eine qualifizierte Anfrage entstehen – ohne Besucher direkt mit einem langen Formular zu konfrontieren.";
+ if(intent==="lead"){
+   if(state.industry)return "Ja. Cora kann aus einem Website-Besucher schrittweise einen verwertbaren Lead machen: Anliegen verstehen, Bedarf konkretisieren, Kauf- oder Kontaktabsicht erkennen und erst danach die passenden Kontaktdaten abfragen. Bei Ihrem "+industryLabels[state.industry]+" können wir das jetzt direkt simulieren.\n\n"+leadQuestion();
+   return "Ja. Cora kann Leads nicht nur über Name und E-Mail erfassen, sondern den geschäftlichen Kontext davor aufnehmen. In welcher Branche soll Cora eingesetzt werden?";
+ }
+ if(intent==="pricing")return "Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\n\nBasic deckt Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung ab. Pro ist für aktive Gesprächsführung, Qualifizierung und individuellere Gesprächswege ausgelegt. Enterprise wird bei komplexeren Anforderungen individuell geplant.";
+ if(intent==="privacy")return "Datenschutz wird vom konkreten Setup bestimmt: Welche Daten werden erfasst, welche Anbieter werden eingesetzt, wo werden Daten verarbeitet oder gespeichert und wohin werden Leads übergeben? Cora kann datensparsam konfiguriert werden. Eine pauschale DSGVO-Garantie wäre ohne Prüfung des konkreten Setups nicht seriös.";
+ if(intent==="integration")return "Cora kann je nach Projekt an bestehende Prozesse angebunden werden, zum Beispiel Formular-/E-Mail-Übergaben, CRM, Kalender oder Automatisierungen. Entscheidend ist zuerst, was nach einer qualifizierten Anfrage passieren soll. Welches System oder welcher Prozess wird heute für Leads verwendet?";
+ if(intent==="package")return packageForIndustry()+"\n\nDie Auswahl wird nicht allein nach Branche getroffen. Entscheidend sind Gesprächslogik, Qualifizierung, Anzahl der Wege, gewünschte Übergabe und Integrationen. Wenn Sie mir kurz sagen, was Cora bei Ihnen konkret leisten soll, kann ich den passenden Umfang im Demo-Gespräch erklären.";
+ if(intent==="example"){
+   if(state.industry)return "Ein Beispiel für "+industryLabels[state.industry]+": Cora beantwortet zuerst die Frage des Besuchers, erkennt den konkreten Bedarf und fragt danach nur die Informationen ab, die für die Bearbeitung relevant sind. "+industryData[state.industry].value+"\n\nWenn Sie möchten, spielen wir genau so einen Interessenten jetzt Schritt für Schritt durch.";
+   return "Wir können mehrere Szenarien testen: Neukunde, konkrete Angebotsanfrage, Preisfrage, allgemeine Information, Terminwunsch, Bestandskunde, Integrationsfrage oder Datenschutzfrage. Nennen Sie einfach eines davon.";
+ }
+ if(intent==="roi")return "Der ROI-Rechner auf der Website ist eine Szenario-Rechnung. Er verbindet Website-Traffic, Anfragequote, Abschlussquote und Auftragswert mit einer angenommenen zusätzlichen Anfragequote. Er ist bewusst keine Umsatzgarantie.";
+ if(intent==="contact")return "Wenn der Anwendungsfall grundsätzlich passt, kann Cora am Ende des Dialogs zur persönlichen Anfrage führen. Dabei können wir vorher festhalten, was der Interessent sucht, warum er anfragt und welcher nächste Schritt gewünscht ist.";
+ if(intent==="industry")return "Cora kann für unterschiedliche Geschäftsmodelle konfiguriert werden. Im Demo sind unter anderem Mobilfunk-Großhandel, Kosmetik, Fitness, SHK, Restaurant, Hotel, Autohaus, Immobilien, Kanzlei, Zahnarztpraxis, Steuerberatung und Handwerk vorbereitet. Welche Branche möchten Sie testen?";
+ return null;
 }
 
 function startQualification(){
  const data=industryData[state.industry];
- if(!data)return null;
- state.stage="qualification";state.conversation.leadMode=true;state.conversation.questionIndex=0;
- const context=state.profile.goal?"Sie möchten "+state.profile.goal+". ":"";
- return context+"Für einen "+industryLabels[state.industry]+" würde ich nicht einfach mehr Chat-Nachrichten sammeln, sondern den Dialog auf verwertbare Geschäftsanfragen ausrichten. Cora kann zuerst die Frage beantworten, dann erkennen, was der Besucher konkret erreichen möchte, und anschließend nur die Informationen abfragen, die für den nächsten Vertriebsschritt relevant sind."+
- "\n\nZum Beispiel kann Cora bei Ihnen zwischen Neukunde, Bestandskunde, Händler/Wiederverkäufer, Produktanfrage und konkretem Angebotsbedarf unterscheiden. "+data.intro+
- "\n\nDamit wir keinen Fragebogen daraus machen, starten wir mit der wichtigsten Information: "+(state.profile.intent||data.questions[0]);
+ if(!data)return "Welche Branche möchten Sie testen?";
+ state.stage="qualification";
+ state.conversation.leadMode=true;
+ state.conversation.questionIndex=0;
+ const goal=state.profile.goal?"Ihr Ziel ist "+state.profile.goal+". ":"";
+ return goal+"Für einen "+industryLabels[state.industry]+" würde ich nicht einfach möglichst viele Chat-Nachrichten sammeln. Cora soll aus dem Gespräch eine verwertbare Geschäftsanfrage machen: Anliegen verstehen, Bedarf einordnen, relevante Rückfragen stellen und erst dann den passenden nächsten Kontaktpunkt anbieten.\n\n"+data.intro+"\n\nStarten wir mit dem wichtigsten Punkt: "+(state.profile.need||state.profile.intent||data.questions[0]);
 }
 
 function nextQualification(answer){
- const data=industryData[state.industry],raw=String(answer||"").trim(),t=normalize(raw),idx=state.conversation.questionIndex;
+ const data=industryData[state.industry],raw=String(answer||"").trim(),idx=state.conversation.questionIndex;
+ if(!data)return directAnswer(raw)||"Welche Branche möchten Sie testen?";
  state.profile.answers.push(raw);
- if(idx===0){state.profile.need=raw;if(!state.profile.service)state.profile.service=raw;}
- if(idx===1)state.profile.customerType=raw;
- if(idx===2)state.profile.intent=raw;
- if(idx===3)state.profile.timing=raw;
- state.conversation.questionIndex++;
+ const nt=normalize(raw);
+ if(idx===0){state.profile.need=raw;state.profile.service=raw;}
+ if(/haendler|wiederverkaeufer|reseller|neukunde|bestandskunde|geschaeftskunde/.test(nt))state.profile.customerType=raw;
+ if(/angebot|bestellung|bestellen|kaufen|einkauf|preis|kondition/.test(nt))state.profile.intent=raw;
+ if(/heute|sofort|diese woche|diesen monat|dringend|bald|naechste woche|wochen/.test(nt))state.profile.timing=raw;
 
- // Branch instead of a rigid questionnaire: acknowledge what was learned and ask only the next missing business-critical point.
  if(state.industry==="WHOLESALE_MOBILE"){
-   if(idx===0){
-     return "Verstanden. Sie suchen also konkret nach: "+raw+". Das ist bereits ein verwertbarer Bedarf.\n\nDer nächste Punkt ist für den Vertrieb wichtiger als allgemeine Kontaktdaten: Geht es dabei um einen konkreten Einkaufs-/Angebotsbedarf oder möchten Sie zunächst Produkte, Marken und Konditionen vergleichen?";
-   }
-   if(idx===1){
-     return "Verstanden. Damit ist auch die Art der Anfrage klarer.\n\nWenn Cora solche Besucher erkennt, sollte sie den nächsten Schritt an der Kaufabsicht ausrichten. Welche Größenordnung ist für Sie ungefähr relevant – einzelne Geräte, kleinere Händlerbestellungen oder größere Stückzahlen?";
-   }
-   if(idx===2){
-     return "Das hilft bei der Einordnung. Cora würde jetzt nicht noch fünf weitere Pflichtfragen stellen, sondern die Anfrage für den Vertrieb verdichten. Wann besteht der Bedarf ungefähr – kurzfristig, in den nächsten Wochen oder eher zur Orientierung?";
-   }
-   if(idx===3){
-     state.conversation.leadMode=false;state.stage="contact";
-     return "Damit haben wir bereits einen verwertbaren B2B-Kontext: Mobilfunk-Großhandel, konkreter Bedarf, Kauf-/Angebotsabsicht und zeitliche Einordnung.\n\nGenau so sollte Cora arbeiten: **erst verstehen, dann qualifizieren, dann Kontakt herstellen**. Die Kontaktdaten werden nicht blind abgefragt, sondern an einen konkreten Geschäftsanlass gebunden.\n\nWenn Sie Cora für Ihren Vertrieb einsetzen möchten, können Sie jetzt eine Cora-Anfrage starten. Im persönlichen Gespräch werden Datenfelder, CRM-/E-Mail-Übergabe und der genaue Gesprächsprozess auf Ihren Betrieb abgestimmt.";
-   }
+   if(idx===0){state.conversation.questionIndex=1;return "Verstanden. Ich habe als Bedarf „"+raw+"“ erfasst.\n\nJetzt würde ich die Anfrage geschäftlich einordnen: Sind Sie bereits Händler/Wiederverkäufer, suchen Sie erstmals einen Lieferanten oder geht es um einen konkreten Einkaufs- bzw. Angebotsbedarf?";}
+   if(idx===1){state.conversation.questionIndex=2;return "Verstanden. Damit ist die Rolle bzw. Kaufabsicht klarer.\n\nWelche Größenordnung ist ungefähr relevant – einzelne Geräte, kleinere Händlerbestellungen oder größere Stückzahlen? Eine grobe Angabe reicht.";}
+   if(idx===2){state.conversation.questionIndex=3;return "Das ist für die Qualifizierung hilfreich.\n\nWann besteht der Bedarf ungefähr – kurzfristig, in den nächsten Wochen oder zunächst nur zur Orientierung?";}
+   if(idx===3){state.conversation.questionIndex=4;return "Damit ist bereits ein brauchbarer B2B-Kontext vorhanden:\n\n"+profileSummary()+"\n\nCora würde jetzt nicht unnötig weitere Fragen stellen. Wenn tatsächlich Interesse besteht, wäre der nächste sinnvolle Schritt die Kontaktdatenaufnahme und Übergabe an Ihren Vertrieb. Wie soll der Interessent am Ende bevorzugt kontaktiert werden – E-Mail, Telefon oder persönliches Gespräch?";}
+   state.conversation.leadMode=false;state.stage="contact";state.profile.contactIntent=raw;
+   return "Perfekt. Die Demo hat jetzt aus dem Gespräch einen konkreten Lead-Kontext aufgebaut:\n\n"+profileSummary()+"\n\nGenau das ist der Unterschied zwischen einem einfachen Chat und einem vertriebsorientierten Cora-Dialog: Der Kontakt wird erst dann angefragt, wenn bereits klar ist, warum der Besucher anfragt. Für Ihren echten Einsatz können Felder, Qualifikationsregeln, CRM-/E-Mail-Übergabe und Gesprächswege individuell definiert werden.";
  }
-
- if(state.conversation.questionIndex<data.questions.length){
-   return "Danke. Ich habe das berücksichtigt. "+data.questions[state.conversation.questionIndex]+"\n\nIch frage das nur, weil die Antwort bestimmt, wie Cora die Anfrage an Ihr Team weitergibt.";
- }
+ if(state.conversation.questionIndex<data.questions.length){state.conversation.questionIndex++;return "Verstanden. Ich berücksichtige „"+raw+"“.\n\n"+data.questions[state.conversation.questionIndex]+"\n\nDie nächste Frage ergibt sich aus dem bisherigen Gespräch – Cora muss also nicht jedem Besucher denselben Fragebogen stellen.";}
  state.conversation.leadMode=false;state.stage="contact";
- return "Damit ist aus dem allgemeinen Website-Interesse eine strukturierte Anfrage geworden.\n\nCora hat die relevanten Angaben aus dem Gespräch übernommen, statt dieselben Informationen erneut abzufragen. Der nächste Schritt ist die Übergabe an den Vertrieb bzw. an das gewünschte Kontaktziel.";
+ return "Damit ist aus dem allgemeinen Website-Interesse eine strukturierte Anfrage geworden.\n\n"+profileSummary()+"\n\nDer nächste Schritt wäre die Übergabe an den gewünschten Kontaktpunkt.";
 }
 
 function answer(text){
+ const raw=String(text||"").trim();
+ if(!raw)return "Stellen Sie mir eine Frage oder beschreiben Sie kurz Ihr Ziel.";
  state.turns++;
- remember(text);
- const t=normalize(text);
- const hasLeadIntent=/lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t);
- const nonLeadTopic=/preis|kosten|dsgvo|datenschutz|integration|crm|wie funktioniert.*integration/.test(t);
+ remember(raw);
+ const intent=classifyIntent(raw);
+ const finish=result=>{persistState();return result;};
 
- const finish=(result)=>{
-   persistState();
-   return result;
- };
+ if(intent==="reset"){resetDemo();return "Die Demo wurde zurückgesetzt. Welche Branche und welches Ziel möchten Sie testen?";}
 
- // Explicit commercial intent has priority over generic FAQ answers.
- // A short follow-up such as "lead sammeln" must never be consumed
- // as the answer to a qualification question.
- if(state.industry && state.profile.goal && hasLeadIntent && !nonLeadTopic){
-   return finish(startQualification());
+ // In an active dialog, answer side questions without destroying the qualification context.
+ if(state.conversation.leadMode && state.industry){
+   if(["pricing","privacy","integration","package","how","example","roi","contact","industry"].includes(intent)){
+     const faq=directAnswer(raw);
+     if(faq)return finish(faq);
+   }
+   // Short repetitions like “lead sammeln” keep the conversation alive instead of restarting it.
+   if(intent==="lead" && raw.length<35)return finish("Genau. Dann bleiben wir beim Lead-Ziel und machen den Dialog konkreter.\n\n"+leadQuestion());
+   return finish(nextQualification(raw));
  }
 
- // Continue an active qualification dialog for normal answers.
- if(state.conversation.leadMode && state.industry && !nonLeadTopic){
-   return finish(nextQualification(text));
- }
+ if(state.industry && state.profile.goal && (intent==="lead"||intent==="how"||intent==="example"))return finish(startQualification());
 
- const direct=directAnswer(text);
- if(direct){
-   return finish(direct);
- }
+ const direct=directAnswer(raw);
+ if(direct)return finish(direct);
 
  if(!state.industry){
-   if(state.profile.goal){
-     return finish("Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte. Welche Branche bzw. welches konkrete Geschäftsmodell soll Cora auf Ihrer Website unterstützen? Ein kurzer Begriff reicht, z. B. Mobilfunk-Großhandel, Autohaus, Kanzlei, Fitnessstudio oder Handwerksbetrieb.");
-   }
-   return finish("Was möchten Sie über Ihre Website erreichen – mehr qualifizierte Kundenkontakte, mehr Termine, mehr Angebotsanfragen oder etwas anderes? Und in welcher Branche sind Sie tätig?");
+   if(state.profile.goal)return finish("Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte. Welche Branche bzw. welches Geschäftsmodell soll Cora auf Ihrer Website unterstützen? Ein kurzer Begriff reicht, z. B. Mobilfunk-Großhandel, Autohaus, Kanzlei, Fitnessstudio oder Handwerksbetrieb.");
+   return finish("Was möchten Sie mit Cora erreichen – mehr qualifizierte Kundenkontakte, mehr Termine, mehr Angebotsanfragen, weniger Standardfragen oder etwas anderes? Und in welcher Branche sind Sie tätig?");
  }
+
+ if(state.profile.goal && intent==="lead")return finish(startQualification());
+ if(intent==="how"||intent==="example")return finish(startQualification());
 
  const data=industryData[state.industry];
-
- if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr lead|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)){
-   return finish(startQualification());
- }
-
- if(/welches paket|welcher tarif|basic|pro|enterprise|was passt|geeignet|empfehl/.test(t)){
-   if(/wie hilft|was kann|mehrwert|nutzen|einsatz|mehr kunden|mehr anfragen|mehr termine/.test(t)){
-     return finish(startQualification());
-   }
-   return finish(packageForIndustry()+"\n\nBasic ist sinnvoll, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Pro ist für aktive Gesprächsführung und Lead-Qualifizierung ausgelegt. Enterprise prüfen wir bei komplexeren individuellen Anforderungen.\n\nDamit ich den Einsatz konkret einordnen kann: "+data.questions[0]);
- }
-
- if(/wie hilft|was kann|mehrwert|nutzen|einsatz|wie funktioniert|anwendungsfall|anwendungsfaelle|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen/.test(t)){
-   return finish(startQualification());
- }
-
- if(/lead|qualifiz|anfrage|kontakt aufnehmen/.test(t)){
-   return finish(state.profile.goal?responseForKnownGoal():startQualification());
- }
-
- if(/dsgvo|datenschutz/.test(t)){
-   return finish("Datenschutz muss anhand des konkreten Setups, der verwendeten Anbieter, Datenarten, Speicherorte und Prozesse geprüft werden. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale DSGVO-Rechtsgarantie wäre nicht seriös. Wenn Sie möchten, können wir als Nächstes festlegen, welche Daten Cora überhaupt für Ihre Leads erfassen soll.");
- }
-
- if(/integration|crm|kalender|api|n8n|hubspot|salesforce|pipedrive/.test(t)){
-   return finish("Je nach Projekt können Formulare, CRM, Kalender oder Automatisierungen angebunden werden. Entscheidend ist zuerst, wohin eine qualifizierte Anfrage bei Ihnen gehen soll. Welche Systeme oder Prozesse nutzen Sie heute?");
- }
-
- if(/preis|kosten|monatlich|einmalig/.test(t)){
-   return finish("Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\n\nBasic ist für Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung gedacht. Pro ist für aktive Gesprächsführung und Lead-Qualifizierung ausgelegt. Die endgültige Einordnung erfolgt anhand Ihres konkreten Einsatzes.");
- }
-
- if(/beispiel|wie wuerde|zeig|testen|simulier/.test(t)){
-   return finish(startQualification());
- }
-
- return finish(data.intro+"\n\nDer relevante nächste Schritt für Ihr Ziel wäre: "+data.questions[0]);
-}
-function addMessage(text,type,cta){
- if(!demoMessages)return;
- const wrap=document.createElement("div");wrap.className="msg "+type;
- const body=document.createElement("div");body.textContent=text;wrap.appendChild(body);
- if(cta){const b=document.createElement("button");b.type="button";b.className="demo-cta";b.textContent=cta;b.addEventListener("click",()=>$("kontakt")?.scrollIntoView({behavior:"smooth",block:"start"}));wrap.appendChild(b);}
- demoMessages.appendChild(wrap);demoMessages.scrollTop=demoMessages.scrollHeight;
+ if(intent==="general")return finish(data.intro+"\n\nEin möglicher nächster Schritt wäre: "+data.questions[0]);
+ return finish(data.intro+"\n\nWas möchten Sie konkret testen – Lead-Qualifizierung, Fragen beantworten, Termin-/Anfrageaufnahme, Integration oder Preise?");
 }
 
 function runDemo(text){
@@ -250,21 +235,11 @@ function runDemo(text){
  if(!text||demoSend?.disabled)return;
  addMessage(text,"user");
  if(demoSend)demoSend.disabled=true;
-
  let result;
- try{
-   result=answer(text);
- }catch(err){
-   console.error("Cora demo error:",err);
-   result="Die Demo konnte diese Eingabe gerade nicht verarbeiten. Bitte versuchen Sie es erneut.";
- }
-
- const cta=/cora.?anfrage|anfrage.*formular|hinterlassen.*kontaktdaten/i.test(result);
+ try{result=answer(text);}catch(err){console.error("Cora demo error:",err);result="Die Demo konnte diese Eingabe gerade nicht verarbeiten. Bitte versuchen Sie es erneut.";}
+ const cta=/cora.?anfrage|anfrage.*formular|kontaktdaten|kontaktpunkt/i.test(result);
  setTimeout(()=>addMessage(result,"cora",cta?"Cora-Anfrage starten":null),180);
- setTimeout(()=>{
-   if(demoSend)demoSend.disabled=false;
-   demoInput?.focus({preventScroll:true});
- },240);
+ setTimeout(()=>{if(demoSend)demoSend.disabled=false;demoInput?.focus({preventScroll:true});},240);
 }
 
 function resetDemo(){
