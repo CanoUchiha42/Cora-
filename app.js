@@ -83,10 +83,10 @@ const industryResponses={
   lead:"Die erhobenen Informationen können als strukturierte Anfrage weitergegeben werden."
  },
  AUTOHAUS:{
-  intro:"Für ein Autohaus kann Cora aus einem allgemeinen Fahrzeuginteresse einen konkreten Verkaufs- oder Servicetermin vorbereiten.",
-  capabilities:["Fahrzeugmodelle und Leistungen erklären","Kaufinteresse qualifizieren","Probefahrten vorbereiten","Werkstatt- und Serviceanfragen aufnehmen","Fahrzeug, Budget und Wunschzeitraum erfassen"],
-  flow:["Für welches Fahrzeug oder Modell interessieren Sie sich?","Geht es um Kauf, Leasing, Probefahrt oder Service?","Wann wäre ein Termin für Sie interessant?","Wie können wir Sie erreichen?"],
-  lead:"Damit erhält der Vertrieb bereits vor dem Rückruf einen strukturierten Überblick über die Anfrage."
+  intro:"Für ein Autohaus kann Cora Besucher nicht nur über Fahrzeuge informieren, sondern ihr konkretes Anliegen erkennen und daraus einen verwertbaren Verkaufs-, Probefahrt- oder Service-Lead entwickeln. Der Dialog richtet sich dabei nach dem, was der Besucher tatsächlich fragt.",
+  capabilities:["Fahrzeugmodelle, Ausstattung und verfügbare Leistungen erklären","Kauf-, Leasing- und Finanzierungsinteresse vorstrukturieren","Marke, Modell, Fahrzeugtyp und gewünschte Ausstattung erfassen","Budget, Anzahlung oder gewünschte monatliche Rate als freiwillige Qualifizierungsangabe aufnehmen","Neu- oder Gebrauchtwageninteresse unterscheiden","Probefahrt- und Beratungstermine vorbereiten","Inzahlungnahme und Fahrzeugwechsel als Anliegen erkennen","Werkstatt-, Inspektions- und Serviceanfragen aufnehmen","Rückruf-, Angebots- und Kontaktwünsche strukturieren"],
+  flow:["Was suchen Sie konkret – ein bestimmtes Modell, ein Fahrzeug in einer bestimmten Preisklasse oder zunächst eine Beratung?","Geht es um Kauf, Leasing, Finanzierung, Probefahrt, Inzahlungnahme oder Service?","Welche Anforderungen sind Ihnen wichtig, zum Beispiel Budget, Fahrzeugart, Antrieb oder Ausstattung?","Wann möchten Sie das Fahrzeug ungefähr kaufen oder einen Termin wahrnehmen?","Wie können wir Sie für die weitere Beratung erreichen?"],
+  lead:"Am Ende kann Cora die Angaben als kompakte Anfrage zusammenfassen, damit der Vertrieb nicht bei null anfangen muss."
  },
  REAL_ESTATE:{
   intro:"Für Immobilienunternehmen kann Cora Interessenten zu Objekten führen und Suchprofile strukturiert erfassen.",
@@ -256,7 +256,8 @@ function getAnswer(q){
    if(n===3) return "Verstanden.\n\n3. Brauchen Sie Anbindungen an bestehende Systeme, zum Beispiel CRM, Kalender, Formulare oder andere interne Prozesse?";
    state.conversation.packageMode=false;
    state.stage="discovery";
-   return "Auf Basis Ihrer Angaben lässt sich der passende Umfang jetzt deutlich genauer einordnen. Für einen typischen Heizungsbetrieb bleibt Pro die naheliegende Ausgangsbasis, wenn Cora aktiv qualifizieren und mehrere Gesprächswege übernehmen soll. Basic kann ausreichen, wenn der Einsatz bewusst einfacher gehalten wird. Enterprise wäre erst bei komplexeren individuellen Anforderungen relevant.\n\nDer nächste Schritt ist jetzt kein automatischer Kauf: Im Anfrageformular können Sie Ihre Kontaktdaten und kurz Ihren gewünschten Einsatz eintragen. Anschließend können wir im persönlichen Gespräch prüfen, welches Paket und welcher Umfang tatsächlich zu Ihrem Betrieb passen.\n\n→ Bitte gehen Sie jetzt zum Formular „Cora anfragen“ und hinterlassen Sie dort Name, Unternehmen, E-Mail und Ihre gewünschte Anwendung.";
+   state.profile.goal="Paket-/Einsatzqualifizierung";
+   return "Auf Basis Ihrer Angaben lässt sich der Einsatz jetzt konkret besprechen. Ich würde daraus noch keine automatische Kaufentscheidung ableiten. Basic ist für einen schlankeren Webchat mit Unternehmenswissen, FAQs und einfacher Lead-Erfassung gedacht. Pro ist umfassender für aktive Gesprächsführung, Qualifizierung und mehrere Gesprächswege. Enterprise kommt bei individuellen, komplexeren Strukturen infrage.\\n\\nIhre bisherige Einordnung kann im Anfrageformular direkt weitergegeben werden. Klicken Sie dort auf „Cora anfragen“ und hinterlassen Sie Name, Unternehmen, E-Mail und kurz Ihren gewünschten Einsatz. Im anschließenden Gespräch können wir den tatsächlichen Umfang gemeinsam festlegen.";
   }
  }
  if(state.conversation.leadMode&&state.industry){
@@ -272,6 +273,12 @@ function getAnswer(q){
   }
  }
 
+ if(state.industry && /wie funktioniert|wie laeuft|ablauf|prozess/.test(normalize(q))){
+  const data=industryResponses[state.industry];
+  if(data){
+   return "Für "+industryLabels[state.industry]+" würde ich den Ablauf nicht mit einer allgemeinen Funktionsliste beginnen. Cora reagiert zuerst auf das konkrete Anliegen, gibt eine kurze fachlich passende Antwort und stellt anschließend genau die nächste Frage, die für die Anfrage relevant ist.\\n\\nTypischer Ablauf:\\n1. Anliegen erkennen\\n2. Relevante Information geben\\n3. Bedarf mit 1–2 gezielten Rückfragen konkretisieren\\n4. Nur notwendige Angaben für den Lead erfassen\\n5. Anfrage zusammenfassen\\n6. Kontaktaufnahme über das Anfrageformular auslösen\\n\\nFür Ihr Unternehmen können Sie jetzt direkt mit einem konkreten Fall starten. Beispiel: „Ich interessiere mich für ein Fahrzeug und möchte wissen, was für mich infrage kommt."";
+  }
+ }
  if(industryLabels[intent]){
   state.industry=intent;
   if(/wie kannst|was kannst|was kann|was bietest|was bietet|hilfst du|hilfe|für mein unternehmen|fuer mein unternehmen/.test(normalize(q)))return contextualIndustryResponse();
@@ -287,12 +294,22 @@ function getAnswer(q){
 }
 
 
-function addDemoMessage(text,type){
+function addDemoMessage(text,type,cta){
  if(!demoMessages)return;
+ const wrap=document.createElement("div");
+ wrap.className="msg "+type;
  const el=document.createElement("div");
- el.className="msg "+type;
  el.textContent=text;
- demoMessages.appendChild(el);
+ wrap.appendChild(el);
+ if(cta){
+  const button=document.createElement("button");
+  button.type="button";
+  button.className="demo-cta";
+  button.textContent=cta.label;
+  button.addEventListener("click",()=>document.getElementById("kontakt")?.scrollIntoView({behavior:"smooth",block:"start"}));
+  wrap.appendChild(button);
+ }
+ demoMessages.appendChild(wrap);
  demoMessages.scrollTop=demoMessages.scrollHeight;
 }
 
@@ -300,7 +317,12 @@ function runDemo(q){
  q=String(q||"").trim();
  if(!q||!demoMessages)return;
  addDemoMessage(q,"user");
- setTimeout(()=>addDemoMessage(getAnswer(q),"cora"),320);
+ setTimeout(()=>{
+  const answer=getAnswer(q);
+  const wantsForm=/anfrageformular|cora anfragen|hinterlassen sie name|kontaktformular/.test(normalize(answer));
+  addDemoMessage(answer,"cora",wantsForm?{label:"Cora-Anfrage starten"}:null);
+  if(wantsForm) state.profile.goal=state.profile.goal||"Lead-Anfrage";
+ },320);
 }
 
 document.querySelectorAll("[data-prompt]").forEach(btn=>{
