@@ -147,10 +147,8 @@ function extractProfile(q){
 function contextualIndustryResponse(){
  const data=industryResponses[state.industry];
  if(!data)return null;
- let out=data.intro+"\n\nCora kann unter anderem:\n• "+data.capabilities.join("\n• ");
- out+="\n\nBeispiel für die Gesprächsführung:\n1. "+data.flow[0]+"\n2. "+data.flow[1]+"\n3. "+data.flow[2]+"\n4. "+data.flow[3];
- out+="\n\n"+data.lead;
- return out;
+ const leadQuestion=data.flow[0];
+ return data.intro+"\n\nCora kann unter anderem:\n• "+data.capabilities.join("\n• ")+"\n\nFür eine echte Demo würde ich aber nicht bei einer Funktionsliste stehen bleiben. Ich würde direkt mit der Qualifizierung beginnen:\n\n"+leadQuestion;
 }
 
 function industryFollowUp(){
@@ -164,21 +162,28 @@ function answerIndustry(q){
  const data=industryResponses[state.industry];
  const t=normalize(q);
  if(!data)return null;
+
  if(/wie|warum|konkret|beispiel|genau/.test(t)&&/fragen|gespraech|qualifiz|kunden|interessent|lead/.test(t)){
-  return "Genau dafür ist die Gesprächslogik gedacht. Cora soll nicht einfach eine Liste von FAQs ausgeben. Sie erkennt das Anliegen und entscheidet, welche Rückfrage als Nächstes sinnvoll ist. Für Ihren "+industryLabels[state.industry]+" könnte das beispielsweise so aussehen:\n\nBesucher: „Ich interessiere mich für ein Probetraining.“\nCora: „Gerne. Was möchtest du mit deinem Training hauptsächlich erreichen – Muskelaufbau, Abnehmen, Ausdauer oder allgemeine Fitness?“\n\nDanach kann Cora abhängig von der Antwort weiterfragen, statt jedes Mal denselben Text zu senden.";
+  return "Genau hier liegt der Lead-Fokus: Cora soll nicht möglichst viele Informationen auf einmal ausgeben. Sie soll erkennen, ob echtes Interesse besteht, die passende nächste Frage stellen und die Anfrage schrittweise vervollständigen. Für Ihre "+industryLabels[state.industry]+" würde der Ablauf beispielsweise mit einer Bedarfsermittlung beginnen:\n\n"+data.flow.map((x,i)=>(i+1)+". "+x).join("\n")+"\n\nDanach kann Cora die Angaben als strukturierte Anfrage zusammenfassen.";
  }
+
  if(/mach|spiel|simulier|testen|durchspielen/.test(t)){
   state.stage="lead";
   state.conversation.leadMode=true;
   state.conversation.questionCount=0;
-  return "Gerne. Wir können den echten Gesprächsfluss simulieren. Sie sind jetzt der Besucher Ihrer Website. Schreiben Sie zum Beispiel: „Ich möchte ein Probetraining.“ Ich übernehme die Rolle von Cora und führe Sie Schritt für Schritt durch die Anfrage.";
+  return "Gerne. Wir wechseln jetzt in den Lead-Modus. Sie sind der Interessent auf der Website. Ich führe Sie Schritt für Schritt durch die Anfrage und stelle jeweils nur die nächste sinnvolle Frage.\n\nStartfrage:\n"+data.flow[0];
  }
- if(/lead|anfrage|kontakt/.test(t)){
+
+ if(/lead|anfrage|kontakt|kunden gewinnen|qualifiz/.test(t)){
   state.stage="lead";
   state.conversation.leadMode=true;
-  return data.lead+" Wenn Sie möchten, starten wir die Qualifizierung jetzt.";
+  state.conversation.questionCount=0;
+  return "Dann fokussieren wir uns auf die Lead-Gewinnung. Ich stelle nicht alle Fragen auf einmal, sondern führe den Interessenten Schritt für Schritt durch die Qualifizierung.\n\n"+data.flow[0];
  }
- return contextualIndustryResponse();
+
+ if(/preis|kosten/.test(t))return responses.PRICE();
+
+ return data.intro+"\n\nWenn Sie möchten, kann ich direkt eine echte Interessenten-Anfrage simulieren. "+data.flow[0];
 }
 
 const responses={
