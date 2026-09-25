@@ -242,7 +242,7 @@ const responses={
  FEATURES:()=> state.industry?contextualIndustryResponse():"Cora beantwortet nicht nur FAQs. Sie kann Unternehmenswissen erklären, Anliegen erkennen, Gespräche führen, Rückfragen stellen, Interessenten qualifizieren und – je nach Setup – strukturierte Leads an den gewünschten Prozess übergeben.",
  LEAD:()=> state.industry?answerIndustry("lead"): "Cora kann Interessenten Schritt für Schritt qualifizieren: Anliegen erkennen, relevante Rückfragen stellen, Kontaktdaten aufnehmen und die Anfrage strukturiert weitergeben.",
  SETUP:()=> "Der Prozess läuft typischerweise in sechs Schritten: 1. Website und Ziel prüfen. 2. Leistungen, FAQ und Unternehmenswissen strukturieren. 3. Gesprächslogik und Lead-Felder festlegen. 4. Cora konfigurieren und testen. 5. Auf der Website einbinden. 6. Nach dem Start Gespräche und Leads auswerten und den Ablauf optimieren.",
- HOW_IT_WORKS:()=> "Cora arbeitet als dialogorientierter Webassistent. Sie ordnet die Nachricht ein, berücksichtigt den bisherigen Gesprächskontext, antwortet passend zum Unternehmen und entscheidet, ob eine Information, Rückfrage oder Lead-Qualifizierung als nächster Schritt sinnvoll ist. Bei einem SHK-Betrieb kann das zum Beispiel von 'Ich brauche eine neue Heizung' über Objekt, Leistung und Zeitraum bis zur konkreten Rückrufanfrage führen.",
+ HOW_IT_WORKS:()=> state.industry?("Cora arbeitet für ein "+industryLabels[state.industry]+" als dialogorientierter Webassistent. Sie berücksichtigt den bisherigen Gesprächskontext, beantwortet zuerst das konkrete Anliegen und stellt danach nur die nächste sinnvolle Frage. So kann aus einer allgemeinen Frage schrittweise eine qualifizierte Anfrage werden.\n\nDer Ablauf ist: Anliegen erkennen → passend antworten → Bedarf konkretisieren → relevante Lead-Daten erfassen → Anfrage zusammenfassen → Kontaktaufnahme vorbereiten."):"Cora arbeitet als dialogorientierter Webassistent. Sie ordnet die Nachricht ein, berücksichtigt den bisherigen Gesprächskontext, antwortet passend zum Unternehmen und entscheidet, ob eine Information, Rückfrage oder Lead-Qualifizierung als nächster Schritt sinnvoll ist.",
  PRIVACY:()=> "Datenschutz hängt vom konkreten Einsatz, den Daten, Anbietern, Speicherorten und der technischen Integration ab. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale Rechtsgarantie wäre nicht seriös.",
  INTEGRATIONS:()=> "Je nach Projekt können Formulare, CRM, Kalender und Automatisierungsprozesse angebunden werden. Diese Demo behauptet keine Schnittstelle als aktiv, wenn sie nicht tatsächlich implementiert ist.",
  PURCHASE:()=> "Wenn Sie Cora ernsthaft einsetzen möchten, ist der nächste sinnvolle Schritt ein kurzes Beratungsgespräch. Dabei klären wir Website, Branche, Ziele, gewünschte Lead-Daten und den passenden Umfang. Wenn Sie mir Name, Unternehmen, E-Mail und Website hinterlassen, kann die Anfrage direkt strukturiert weiterbearbeitet werden.",
@@ -339,11 +339,14 @@ document.querySelectorAll("[data-prompt]").forEach(btn=>{
 
 demoForm?.addEventListener("submit",e=>{
  e.preventDefault();
+ e.stopPropagation();
  const value=demoInput?.value||"";
  if(!value.trim())return;
- runDemo(value);
+ const button=demoForm.querySelector('button[type="submit"]');
+ if(button)button.disabled=true;
  demoInput.value="";
- demoInput.focus();
+ runDemo(value);
+ setTimeout(()=>{if(button)button.disabled=false;demoInput.focus();},380);
 });
 
 const roiEls={
