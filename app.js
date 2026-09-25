@@ -184,11 +184,19 @@ function answerIndustry(q){
  if(!data)return null;
 
  if(/welches paket|welches produkt|was passt|welcher tarif|basic|pro|enterprise|geeignetsten|geeignetste|am besten|empfehl/.test(t)){
-  return packageRecommendation(state.industry);
+  return packageRecommendation(state.industry)+"\n\nWenn Sie möchten, kann ich noch kurz nach Standorten, gewünschtem Funktionsumfang und Integrationen fragen und die Einordnung genauer vorbereiten.";
  }
 
- if(/wie|warum|konkret|beispiel|genau/.test(t)&&/fragen|gespraech|qualifiz|kunden|interessent|lead/.test(t)){
-  return "Genau hier liegt der Lead-Fokus: Cora soll nicht möglichst viele Informationen auf einmal ausgeben. Sie soll erkennen, ob echtes Interesse besteht, die passende nächste Frage stellen und die Anfrage schrittweise vervollständigen. Für Ihre "+industryLabels[state.industry]+" würde der Ablauf beispielsweise mit einer Bedarfsermittlung beginnen:\n\n"+data.flow.map((x,i)=>(i+1)+". "+x).join("\n")+"\n\nDanach kann Cora die Angaben als strukturierte Anfrage zusammenfassen.";
+ if(/preis|kosten|monatlich|einmalig/.test(t))return responses.PRICE();
+
+ if(/dsgvo|datenschutz|daten/.test(t))return responses.PRIVACY();
+
+ if(/integration|crm|kalender|schnittstelle|api|n8n|salesforce|hubspot|pipedrive/.test(t)){
+  return "Je nach gewünschtem Setup können z. B. CRM, Kalender, Formulare oder Automatisierungen angebunden werden. Für "+industryLabels[state.industry]+" wäre entscheidend, wohin qualifizierte Anfragen anschließend gehen sollen.\n\nMögliche Varianten:\n• Anfrage direkt an Ihr Team\n• Formular/Lead-Tabelle\n• CRM-Übergabe\n• Terminprozess\n• individuelle Automatisierung\n\nWelche Systeme oder Prozesse nutzen Sie heute?";
+ }
+
+ if(/wie|warum|konkret|beispiel|genau|ablauf/.test(t)&&/fragen|gespraech|qualifiz|kunden|interessent|lead|funktion/.test(t)){
+  return "Der Lead-Fokus funktioniert kontextabhängig: Cora gibt zuerst eine kurze Antwort, erkennt danach das Anliegen und stellt nur die nächste sinnvolle Frage. Für "+industryLabels[state.industry]+" kann das so aussehen:\n\n"+data.flow.map((x,i)=>(i+1)+". "+x).join("\n")+"\n\nJe nach Antwort kann Cora Fragen überspringen, vertiefen oder direkt auf Kontaktaufnahme wechseln. Am Ende steht eine strukturierte Anfrage statt eines beliebigen Chatverlaufs.";
  }
 
  if(/mach|spiel|simulier|testen|durchspielen/.test(t)){
@@ -199,13 +207,24 @@ function answerIndustry(q){
   return startLeadFlow();
  }
 
- if(/preis|kosten/.test(t))return responses.PRICE();
-
- return data.intro+"\n\nWenn Sie möchten, kann ich direkt eine echte Interessenten-Anfrage simulieren. "+data.flow[0];
+ // Context-sensitive examples give visitors several natural ways to continue.
+ const prompts={
+  SHK:"Zum Beispiel können Sie antworten mit: „Wärmepumpe für ein Einfamilienhaus“, „Heizung defekt“, „Badsanierung geplant“ oder „Ich möchte ein Angebot“.",
+  FITNESS:"Zum Beispiel: „Ich möchte abnehmen“, „Ich will ein Probetraining“, „Was kostet die Mitgliedschaft?“ oder „Ich suche Personal Training“.",
+  RESTAURANT:"Zum Beispiel: „Ich möchte für 6 Personen reservieren“, „Wir planen eine Feier“, „Habt ihr vegetarische Optionen?“ oder „Welche Öffnungszeiten habt ihr?“",
+  HOTEL:"Zum Beispiel: „Ich suche ein Doppelzimmer“, „Wir reisen mit Kindern“, „Ich möchte ein Zimmer für ein Wochenende“ oder „Wie funktioniert der Check-in?“",
+  AUTOHAUS:"Zum Beispiel: „Ich interessiere mich für einen BMW“, „Ich möchte eine Probefahrt“, „Ich suche Leasing“ oder „Ich brauche einen Werkstatttermin“.",
+  REAL_ESTATE:"Zum Beispiel: „Ich suche eine Wohnung“, „Ich möchte eine Immobilie kaufen“, „Ich will eine Besichtigung“ oder „Mein Budget liegt bei 400.000 €“.",
+  LAW_FIRM:"Zum Beispiel: „Ich brauche einen Anwalt“, „Es geht um Arbeitsrecht“, „Ich möchte ein Erstgespräch“ oder „Ich möchte zurückgerufen werden“.",
+  DENTAL:"Zum Beispiel: „Ich brauche einen Termin“, „Ich bin Neupatient“, „Ich habe eine allgemeine Frage“ oder „Ich möchte eine Behandlung anfragen“.",
+  TAX_ADVISOR:"Zum Beispiel: „Ich bin Unternehmer“, „Ich brauche Unterstützung bei der Buchhaltung“, „Ich suche einen Steuerberater“ oder „Ich möchte ein Erstgespräch“.",
+  CRAFT:"Zum Beispiel: „Ich brauche einen Elektriker“, „Wir planen eine Renovierung“, „Ich möchte ein Angebot“ oder „Es geht um eine Reparatur“."
+ };
+ return data.intro+"\n\n"+data.lead+"\n\nSie können frei antworten. "+(prompts[state.industry]||"Beschreiben Sie einfach Ihr Anliegen, Ziel oder Ihre gewünschte Leistung.")+"\n\nWenn echtes Interesse erkennbar ist, wechselt Cora automatisch in die Lead-Qualifizierung.";
 }
 
 const responses={
- PRICE:()=> "Cora Basic kostet 895 € einmalig plus 495 € monatlich. Cora Pro kostet 1.495 € einmalig plus 895 € monatlich. Enterprise wird individuell kalkuliert. Für einen typischen SHK-Betrieb ist Pro in der Regel das umfassendere Paket, wenn Cora nicht nur Fragen beantworten, sondern Interessenten aktiv qualifizieren und Anfragen strukturiert vorbereiten soll. Basic ist dennoch ein sehr guter Einstieg, wenn zunächst Webchat, Unternehmenswissen und einfache Lead-Erfassung im Vordergrund stehen.",
+ PRICE:()=> "Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\n\nBasic passt, wenn Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung im Mittelpunkt stehen. Pro ist umfassender für aktive Gesprächsführung, Lead-Qualifizierung und mehrere Gesprächswege. Enterprise prüfen wir bei komplexen individuellen Anforderungen. Die genaue Einordnung erfolgt am besten im kurzen Beratungsgespräch.",
  FEATURES:()=> state.industry?contextualIndustryResponse():"Cora beantwortet nicht nur FAQs. Sie kann Unternehmenswissen erklären, Anliegen erkennen, Gespräche führen, Rückfragen stellen, Interessenten qualifizieren und – je nach Setup – strukturierte Leads an den gewünschten Prozess übergeben.",
  LEAD:()=> state.industry?answerIndustry("lead"): "Cora kann Interessenten Schritt für Schritt qualifizieren: Anliegen erkennen, relevante Rückfragen stellen, Kontaktdaten aufnehmen und die Anfrage strukturiert weitergeben.",
  SETUP:()=> "Der Prozess läuft typischerweise in sechs Schritten: 1. Website und Ziel prüfen. 2. Leistungen, FAQ und Unternehmenswissen strukturieren. 3. Gesprächslogik und Lead-Felder festlegen. 4. Cora konfigurieren und testen. 5. Auf der Website einbinden. 6. Nach dem Start Gespräche und Leads auswerten und den Ablauf optimieren.",
