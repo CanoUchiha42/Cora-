@@ -3,7 +3,28 @@
 const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbzDrLyFEsCVSVqLphU7fiCrNo_slakHFf6R8JSHvqT-5Lr6Y5uxyBQbNshS0uzUXSHa/exec";
 const $=id=>document.getElementById(id);
 const demoMessages=$("demoMessages"),demoInput=$("demoInput"),demoSend=$("demoSend");
+const STATE_KEY="cora_demo_state_v3";
 const state={industry:null,turns:0,stage:"discovery",profile:{goal:null,service:null,need:null,location:null,timing:null,contactIntent:null,answers:[]},conversation:{leadMode:false,questionIndex:0}};
+function restoreState(){
+ try{
+  const saved=sessionStorage.getItem(STATE_KEY);
+  if(!saved)return;
+  const parsed=JSON.parse(saved);
+  if(parsed&&typeof parsed==="object"){
+   state.industry=parsed.industry||null;
+   state.turns=Number(parsed.turns)||0;
+   state.stage=parsed.stage||"discovery";
+   state.profile={...state.profile,...(parsed.profile||{})};
+   state.profile.answers=Array.isArray(state.profile.answers)?state.profile.answers:[];
+   state.conversation={...state.conversation,...(parsed.conversation||{})};
+  }
+ }catch(err){console.warn("Cora demo state restore failed",err);}
+}
+function persistState(){
+ try{sessionStorage.setItem(STATE_KEY,JSON.stringify(state));}
+ catch(err){console.warn("Cora demo state save failed",err);}
+}
+restoreState();
 
 const industryLabels={WHOLESALE_MOBILE:"Mobilfunk-Großhandel",BEAUTY:"Kosmetiksalon",FITNESS:"Fitnessstudio",SHK:"SHK-/Sanitär-/Heizungsbetrieb",RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",TAX_ADVISOR:"Steuerberatung",CRAFT:"Handwerksbetrieb"};
 
@@ -134,6 +155,16 @@ function startQualification(){
 }\n\nfunction answer(text){
  state.turns++;remember(text);
  const t=normalize(text);
+ const hasLeadGoal=/lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t);
+ const isNonLeadTopic=/preis|kosten|dsgvo|datenschutz|integration|crm|wie funktioniert.*integration/.test(t);
+
+ // Once a commercial lead goal is known, keep the demo in the qualification flow.
+ // This deliberately takes precedence over generic FAQ answers.
+ if(state.industry && state.profile.goal && !isNonLeadTopic && (hasLeadGoal || state.conversation.leadMode)){
+   const result=state.conversation.leadMode ? nextQualification(text) : startQualification();
+   persistState();
+   return result;
+ }
 
  // Commercial intent must always win over generic FAQ routing once
  // industry + lead goal are known. This also handles short follow-ups such
@@ -166,7 +197,9 @@ function startQualification(){
  if(/integration|crm|kalender|api|n8n|hubspot|salesforce|pipedrive/.test(t))return "Je nach Projekt können Formulare, CRM, Kalender oder Automatisierungen angebunden werden. Entscheidend ist zuerst, wohin eine qualifizierte Anfrage bei Ihnen gehen soll. Welche Systeme oder Prozesse nutzen Sie heute?";
  if(/preis|kosten|monatlich|einmalig/.test(t))return "Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\\n\\nBasic ist für Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung gedacht. Pro ist für aktive Gesprächsführung und Lead-Qualifizierung ausgelegt. Die endgültige Einordnung erfolgt anhand Ihres konkreten Einsatzes.";
  if(/beispiel|wie wuerde|wie würde|zeig|testen|simulier/.test(t))return startQualification();
- return data.intro+"\\n\\nDer relevante nächste Schritt für Ihr Ziel wäre: "+data.questions[0];
+ const result=data.intro+"\\n\\nDer relevante nächste Schritt für Ihr Ziel wäre: "+data.questions[0];
+ persistState();
+ return result;
 }
 
 function addMessage(text,type,cta){
@@ -178,16 +211,28 @@ function addMessage(text,type,cta){
 }
 
 function runDemo(text){
- text=String(text||"").trim();if(!text)return;
+ text=String(text||"").trim();
+ if(!text)return;
  addMessage(text,"user");
- setTimeout(()=>{const result=answer(text);const cta=/cora.?anfrage|anfrage.*formular|hinterlassen.*kontaktdaten/i.test(result);addMessage(result,"cora",cta?"Cora-Anfrage starten":null);},220);
+ if(demoSend)demoSend.disabled=true;
+ try{
+  const result=answer(text);
+  const cta=/cora.?anfrage|anfrage.*formular|hinterlassen.*kontaktdaten/i.test(result);
+  setTimeout(()=>addMessage(result,"cora",cta?"Cora-Anfrage starten":null),180);
+ }catch(err){
+  console.error("Cora demo error:",err);
+  setTimeout(()=>addMessage("Entschuldigung. Die Demo konnte diese Eingabe gerade nicht verarbeiten. Bitte versuchen Sie es erneut oder starten Sie die Demo neu.","cora"),180);
+ }finally{
+  setTimeout(()=>{if(demoSend)demoSend.disabled=false;demoInput?.focus({preventScroll:true});},220);
+ }
 }
 
 window.coraSubmitDemoQuestion=function(event){
  if(event){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation?.();}
- const value=demoInput?.value||"";if(!value.trim())return;
- if(demoSend)demoSend.disabled=true;demoInput.value="";runDemo(value);
- setTimeout(()=>{if(demoSend)demoSend.disabled=false;demoInput?.focus({preventScroll:true});},400);
+ const value=demoInput?.value||"";
+ if(!value.trim()||demoSend?.disabled)return;
+ demoInput.value="";
+ runDemo(value);
 };
 demoSend?.addEventListener("click",window.coraSubmitDemoQuestion);
 demoInput?.addEventListener("keydown",e=>{if(e.key==="Enter")window.coraSubmitDemoQuestion(e);});
