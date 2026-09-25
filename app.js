@@ -39,20 +39,24 @@ function normalize(value){return String(value||"").toLowerCase().replace(/ä/g,"
 function detectIndustry(text){
  const t=normalize(text);
  const patterns={
-  WHOLESALE_MOBILE:["grosshandel mobilfunk","mobilfunk grosshandel","grosshandel fuer mobilfunk","mobilfunk grosshandel und zubehoer","mobilfunk und zubehoer grosshandel","mobilfunk zubehoer grosshandel","telekommunikationsgrosshandel","telekommunikation grosshandel","gross und aussenhandel mobilfunk","grosshandel und aussenhandel mobilfunk","gross und aussenhandel","grosshandel","grosshaendler","grosshandel mobilfunk und zubehoer"],
-  BEAUTY:["kosmetiksalon","kosmetiksaloon","kosmetiksalons","kosmetik salon","beautysalon","beauty salon","nagelstudio","friseursalon","friseur","wimpern","gesichtsbehandlung","haarentfernung","aesthetik"],
-  FITNESS:["fitnessstudio","fitness studio","fitness","probetraining","mitgliedschaft","personal training"],
-  SHK:["heizung","heizungsbau","heizungsbauer","waermepumpe","sanitaer","sanitaerbetrieb","shk","badsanierung","klima","wasserinstallation"],
-  RESTAURANT:["restaurant","gastronomie","reservierung","speisekarte","tisch reservieren"],
-  HOTEL:["hotel","zimmer buchen","check in","check-in","fruehstueck"],
-  AUTOHAUS:["autohaus","autohandel","fahrzeug","probefahrt","leasing","werkstatt"],
-  REAL_ESTATE:["immobilien","immobilie","immobilienmakler","makler","besichtigung","mietwohnung"],
-  LAW_FIRM:["kanzlei","rechtsanwalt","anwalt","rechtsberatung"],
-  DENTAL:["zahnarzt","zahnarztpraxis","zahnbehandlung"],
-  TAX_ADVISOR:["steuerberater","steuerberatung","steuerkanzlei"],
-  CRAFT:["handwerksbetrieb","handwerker","meisterbetrieb","elektriker","maler","bauunternehmen"]
+  WHOLESALE_MOBILE:["grosshandel mobilfunk","mobilfunk grosshandel","grosshandel fuer mobilfunk","grosshandel fuer mobilfunk und zubehoer","grosshandel mobilfunk und zubehoer","mobilfunk grosshandel und zubehoer","mobilfunk und zubehoer grosshandel","mobilfunk zubehoer grosshandel","telekommunikationsgrosshandel","telekommunikation grosshandel","telekommunikations grosshandel","gross und aussenhandel mobilfunk","gross und aussenhandel fuer mobilfunk","grosshandel und aussenhandel mobilfunk","grosshandel und aussenhandel fuer mobilfunk","grosshandel mobilfunk zubehoer","grosshaendler mobilfunk","mobilfunk grosshaendler","mobilfunk grosshandel zubehoer","mobilfunk grosshandel","monilfunk grosshandel","monilfunk","mobilfunk","telekommunikation grosshandel","telekommunikationshandel","handy grosshandel","smartphone grosshandel"],
+  BEAUTY:["kosmetiksalon","kosmetiksaloon","kosmetiksalons","kosmetik salon","kosmetikstudio","kosmetik studio","beautysalon","beauty salon","nagelstudio","nagel salon","friseursalon","friseur","friseurbetrieb","barbershop","barber","wimpernstudio","wimpern","gesichtsbehandlung","haarentfernung","aesthetik"],
+  FITNESS:["fitnessstudio","fitness studio","fitnesscenter","fitness center","fitnessclub","fitness club","fitness","probetraining","mitgliedschaft","personal training","crossfit","yoga studio","yogastudio"],
+  SHK:["heizung","heizungsbau","heizungsbauer","heizungsbetrieb","waermepumpe","waermepumpen","sanitaer","sanitaerbetrieb","sanitaerinstallateur","shk","shk betrieb","shkbetrieb","badsanierung","badinstallation","klima","klimaanlage","kaelteanlagen","wasserinstallation"],
+  RESTAURANT:["restaurant","gastronomie","gaststaette","gasthaus","imbiss","cafe","café","bistro","bar","reservierung","speisekarte","tisch reservieren","catering"],
+  HOTEL:["hotel","hotelbetrieb","gasthof","pension","ferienhotel","zimmer buchen","check in","check-in","fruehstueck","uebernachtung","beherbergung"],
+  AUTOHAUS:["autohaus","autohandel","autohändler","autoverkauf","fahrzeughandel","fahrzeughaendler","kfz handel","kfzbetrieb","kfz betrieb","fahrzeug","probefahrt","leasing","werkstatt","autowerkstatt","gebrauchtwagen"],
+  REAL_ESTATE:["immobilien","immobilie","immobilienmakler","immobilienunternehmen","immobilienagentur","makler","maklerbuero","hausverwaltung","property management","besichtigung","mietwohnung","wohnimmobilien","gewerbeimmobilien"],
+  LAW_FIRM:["kanzlei","rechtsanwalt","rechtsanwaelte","anwalt","anwaltskanzlei","rechtsberatung","rechtsanwaltskanzlei","law firm"],
+  DENTAL:["zahnarzt","zahnarztpraxis","zahnmedizin","zahnarztzentrum","zahnklinik","zahnbehandlung","zahnarztpraxis"],
+  TAX_ADVISOR:["steuerberater","steuerberatung","steuerkanzlei","steuerberaterkanzlei","steuerbuero","steuerbuero","tax advisor","buchhaltungsbuero"],
+  CRAFT:["handwerksbetrieb","handwerker","handwerksunternehmen","meisterbetrieb","elektriker","elektrobetrieb","elektroinstallation","maler","malerbetrieb","bauunternehmen","bauunternehmer","dachdecker","dachdeckerbetrieb","tischler","schreiner","metallbauer","sanitaerinstallateur"]
  };
- for(const [id,words] of Object.entries(patterns)){if(words.some(w=>t.includes(w)))return id;} if(/gross|aussenhandel/.test(t)&&/mobilfunk|telekommunikation|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
+ for(const [id,words] of Object.entries(patterns)){
+   if(words.some(w=>t.includes(normalize(w))))return id;
+ }
+ if(/gross|aussenhandel|grosshandel|grosshaendler|grosshandel/.test(t)&&/mobilfunk|monilfunk|telekommunikation|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
+ if(/mobilfunk|monilfunk|telekommunikation/.test(t)&&/gross|handel|haendler|verkaeufer|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
  return null;
 }
 
