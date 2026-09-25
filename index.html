@@ -19,10 +19,10 @@
 <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
 <header class="nav-wrap"><nav class="nav" aria-label="Hauptnavigation">
 <a class="brand" href="#top" aria-label="Cora AI Startseite"><span class="brand-mark">✦</span><span>Cora <b>AI</b></span></a>
-<div class="nav-links"><a href="#produkt">Produkt</a><a href="#branchen">Branchen</a><a href="#preise">Preise</a><a href="#faq">FAQ</a></div>
+<div class="nav-links"><a href="#produkt">Produkt</a><a href="#branchen">Branchen</a><a href="#roi">ROI-Rechner</a><a href="#preise">Preise</a><a href="#faq">FAQ</a></div>
 <a class="button button-small" href="#kontakt">Cora anfragen <span>↗</span></a>
 <button class="menu" id="menuBtn" aria-label="Menü öffnen" aria-expanded="false">☰</button>
-</nav><div class="mobile-nav" id="mobileNav"><a href="#produkt">Produkt</a><a href="#branchen">Branchen</a><a href="#preise">Preise</a><a href="#faq">FAQ</a><a href="#kontakt">Cora anfragen</a></div></header>
+</nav><div class="mobile-nav" id="mobileNav"><a href="#produkt">Produkt</a><a href="#branchen">Branchen</a><a href="#roi">ROI-Rechner</a><a href="#preise">Preise</a><a href="#faq">FAQ</a><a href="#kontakt">Cora anfragen</a></div></header>
 
 <main id="top">
 <section class="hero section">
@@ -79,6 +79,26 @@
 
 <section class="section security"><div class="security-panel"><div><div class="eyebrow">DATENSCHUTZ & SICHERHEIT</div><h2>Seriöse KI beginnt<br>mit <span>klaren Grenzen.</span></h2><p>Cora soll dort eingesetzt werden, wo Nutzen und kontrollierte Datenverarbeitung zusammenpassen. Die konkrete Datenschutzbewertung hängt vom jeweiligen Einsatzfall, den Daten und der technischen Integration ab.</p></div><div class="security-list"><div><b>01</b><strong>Datenminimierung</strong><span>Nur die für den jeweiligen Prozess notwendigen Informationen.</span></div><div><b>02</b><strong>Kontrollierbare Inhalte</strong><span>Unternehmenswissen und Antworten werden gezielt definiert.</span></div><div><b>03</b><strong>Transparente Prozesse</strong><span>Datenschutz und Datenflüsse werden vor dem Einsatz betrachtet.</span></div></div></div></section>
 
+<section class="section section-light" id="roi">
+<div class="section-intro center"><div class="eyebrow dark">ROI-RECHNER</div><h2>Was könnte ein zusätzlicher<br><span>Lead wert sein?</span></h2><p>Rechnen Sie mit Ihren eigenen Website-Zahlen. Das Ergebnis ist eine Szenario-Rechnung und keine Umsatzgarantie.</p></div>
+<div class="roi-box">
+<div class="roi-inputs">
+<label>Website-Besucher / Monat<input id="roiVisitors" type="number" min="0" value="3000"></label>
+<label>Anfragequote aktuell (%)<input id="roiRate" type="number" min="0" max="100" step="0.1" value="2"></label>
+<label>Abschlussquote (%)<input id="roiClose" type="number" min="0" max="100" step="0.1" value="30"></label>
+<label>Durchschnittlicher Auftragswert (€)<input id="roiValue" type="number" min="0" value="3500"></label>
+<label>Cora-Szenario: zusätzliche Anfragequote (Prozentpunkte)<input id="roiLift" type="range" min="0" max="5" step="0.1" value="1"><output id="roiLiftValue">+1,0 %-Punkte</output></label>
+</div>
+<div class="roi-result">
+<div><small>Zusätzliche Anfragen / Monat</small><strong id="roiLeads">30</strong></div>
+<div><small>Zusätzlicher potenzieller Monatsumsatz</small><strong id="roiRevenue">31.500 €</strong></div>
+<div><small>Potenzielle Mehrumsatz-Spanne / Jahr</small><strong id="roiYear">378.000 €</strong></div>
+<p>Die Rechnung zeigt den möglichen wirtschaftlichen Hebel einer höheren Anfragequote. Tatsächliche Ergebnisse hängen unter anderem von Traffic, Nachfrage, Angebot, Abschlussquote und Cora-Konfiguration ab.</p>
+<a class="button" href="#kontakt" id="roiCta">Persönliches Beratungsgespräch anfragen <span>↗</span></a>
+</div>
+</div>
+</section>
+
 <section class="section section-light" id="preise"><div class="section-intro center"><div class="eyebrow dark">PREISE</div><h2>Klar kalkuliert.<br><span>Ohne versteckte Spielchen.</span></h2><p>Die Einrichtung ist einmalig. Der laufende Preis deckt den Betrieb und die vereinbarte Cora-Leistung ab.</p></div>
 <div class="pricing-grid"><article class="price-card"><div class="price-top"><span>CORA BASIC</span><em>START</em></div><h3>Für den Einstieg in intelligente Website-Kommunikation.</h3><div class="price"><strong>495 €</strong><small>/ Monat</small></div><p class="setup">+ 895 € einmalige Einrichtung</p><ul><li>KI-Webchat</li><li>Unternehmenswissen</li><li>Lead-Erfassung</li><li>Individuelle Grundkonfiguration</li></ul><a href="#kontakt" class="button button-dark">Basic anfragen</a></article>
 <article class="price-card featured"><div class="popular">EMPFOHLEN</div><div class="price-top"><span>CORA PRO</span><em>GROW</em></div><h3>Für Unternehmen mit höheren Anforderungen an Qualifizierung und Anpassung.</h3><div class="price"><strong>895 €</strong><small>/ Monat</small></div><p class="setup">+ 1.495 € einmalige Einrichtung</p><ul><li>Alles aus Basic</li><li>Erweiterte Lead-Qualifizierung</li><li>Individuellere Gesprächsführung</li><li>Erweiterte Anpassung an den Use Case</li></ul><a href="#kontakt" class="button">Pro anfragen <span>↗</span></a></article>
@@ -100,5 +120,5 @@
 </main>
 
 <footer><div class="footer-main"><div><a class="brand" href="#top"><span class="brand-mark">✦</span><span>Cora <b>AI</b></span></a><p>ACE AI AGENTS<br>KI-Webagenten für moderne Kundenkommunikation.</p></div><div class="footer-links"><div><b>Produkt</b><a href="#produkt">Funktionen</a><a href="#branchen">Branchen</a><a href="#preise">Preise</a></div><div><b>Unternehmen</b><a href="#faq">FAQ</a><a href="#kontakt">Kontakt</a><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a></div></div></div><div class="footer-bottom"><span>© 2026 ACE AI AGENTS · Emre Akyıldız</span><span><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></span></div></footer>
-<script src="app.js?v=20260925-4"></script>
+<script src="app.js?v=20260925-5"></script>
 </body></html>
