@@ -227,4 +227,60 @@ function getAnswer(q){
  return "Beschreiben Sie einfach Ihr Unternehmen und eine echte Situation. Zum Beispiel: „Ich leite ein Fitnessstudio und möchte mehr Probetrainings über meine Website gewinnen.“ Cora kann anschließend zeigen, welche Fragen sie stellen und wie daraus eine qualifizierte Anfrage entsteht.";
 }
 
-;
+
+function addDemoMessage(text,type){
+ if(!demoMessages)return;
+ const el=document.createElement("div");
+ el.className="msg "+type;
+ el.textContent=text;
+ demoMessages.appendChild(el);
+ demoMessages.scrollTop=demoMessages.scrollHeight;
+}
+
+function runDemo(q){
+ q=String(q||"").trim();
+ if(!q||!demoMessages)return;
+ addDemoMessage(q,"user");
+ setTimeout(()=>addDemoMessage(getAnswer(q),"cora"),320);
+}
+
+document.querySelectorAll("[data-prompt]").forEach(btn=>{
+ btn.addEventListener("click",()=>runDemo(btn.dataset.prompt));
+});
+
+demoForm?.addEventListener("submit",e=>{
+ e.preventDefault();
+ const value=demoInput?.value||"";
+ if(!value.trim())return;
+ runDemo(value);
+ demoInput.value="";
+ demoInput.focus();
+});
+
+const leadForm=document.getElementById("leadForm"),status=document.getElementById("formStatus");
+leadForm?.addEventListener("submit",async e=>{
+ e.preventDefault();
+ if(!leadForm.reportValidity())return;
+ const hp=leadForm.querySelector('[name="website_check"]');
+ if(hp?.value)return;
+ const button=leadForm.querySelector('button[type="submit"]');
+ const original=button?.innerHTML;
+ if(button){button.disabled=true;button.innerHTML="Wird übermittelt …";}
+ if(status){status.className="form-status";status.textContent="";}
+ const data=new URLSearchParams();
+ new FormData(leadForm).forEach((value,key)=>data.append(key,String(value)));
+ data.append("source","Cora Website");
+ data.append("page",window.location.href);
+ data.append("submitted_at_client",new Date().toISOString());
+ try{
+  await fetch(APPS_SCRIPT_URL,{method:"POST",mode:"no-cors",body:data});
+  leadForm.reset();
+  if(status){status.className="form-status success";status.textContent="Ihre Anfrage wurde übermittelt. Vielen Dank.";}
+ }catch(error){
+  console.error(error);
+  if(status){status.className="form-status error";status.textContent="Die Anfrage konnte gerade nicht übermittelt werden. Bitte versuchen Sie es erneut.";}
+ }finally{
+  if(button){button.disabled=false;button.innerHTML=original||"Cora anfragen";}
+ }
+});
+})();
