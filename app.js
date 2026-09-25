@@ -338,25 +338,28 @@ document.querySelectorAll("[data-prompt]").forEach(btn=>{
 });
 
 const demoSend=document.getElementById("demoSend");
-function submitDemoQuestion(){
+function submitDemoQuestion(event){
+ if(event){
+  event.preventDefault();
+  event.stopPropagation();
+  if(event.stopImmediatePropagation)event.stopImmediatePropagation();
+ }
  const value=demoInput?.value||"";
- if(!value.trim())return;
+ if(!value.trim()||!demoMessages)return;
  if(demoSend)demoSend.disabled=true;
  demoInput.value="";
  runDemo(value);
- setTimeout(()=>{if(demoSend)demoSend.disabled=false;demoInput?.focus();},450);
+ setTimeout(()=>{
+  if(demoSend)demoSend.disabled=false;
+  demoInput?.focus({preventScroll:true});
+ },450);
 }
+window.coraSubmitDemoQuestion=submitDemoQuestion;
 demoSend?.addEventListener("click",submitDemoQuestion);
 demoInput?.addEventListener("keydown",e=>{
  if(e.key==="Enter"){
-  e.preventDefault();
-  e.stopPropagation();
-  submitDemoQuestion();
+  submitDemoQuestion(e);
  }
-});
-demoForm?.addEventListener("submit",e=>{
- e.preventDefault();
- e.stopPropagation();
 });
 
 const roiEls={
