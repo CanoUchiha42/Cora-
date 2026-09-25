@@ -129,6 +129,15 @@ function detectIntent(q){
  return top&&top.score>0?top.id:"UNKNOWN";
 }
 
+function startLeadFlow(){
+ const data=industryResponses[state.industry];
+ if(!data)return null;
+ state.stage="lead";
+ state.conversation.leadMode=true;
+ state.conversation.questionCount=1;
+ return "Dann machen wir es konkret. Ich führe Sie Schritt für Schritt durch die Anfrage und stelle jeweils nur die nächste sinnvolle Frage.\n\n"+data.flow[0];
+}
+
 function extractProfile(q){
  const t=normalize(q);
  const industry=detectIndustry(q);
@@ -168,17 +177,11 @@ function answerIndustry(q){
  }
 
  if(/mach|spiel|simulier|testen|durchspielen/.test(t)){
-  state.stage="lead";
-  state.conversation.leadMode=true;
-  state.conversation.questionCount=0;
-  return "Gerne. Wir wechseln jetzt in den Lead-Modus. Sie sind der Interessent auf der Website. Ich führe Sie Schritt für Schritt durch die Anfrage und stelle jeweils nur die nächste sinnvolle Frage.\n\nStartfrage:\n"+data.flow[0];
+  return startLeadFlow();
  }
 
  if(/lead|anfrage|kontakt|kunden gewinnen|qualifiz/.test(t)){
-  state.stage="lead";
-  state.conversation.leadMode=true;
-  state.conversation.questionCount=0;
-  return "Dann fokussieren wir uns auf die Lead-Gewinnung. Ich stelle nicht alle Fragen auf einmal, sondern führe den Interessenten Schritt für Schritt durch die Qualifizierung.\n\n"+data.flow[0];
+  return startLeadFlow();
  }
 
  if(/preis|kosten/.test(t))return responses.PRICE();
@@ -187,15 +190,15 @@ function answerIndustry(q){
 }
 
 const responses={
- PRICE:()=> "Cora Basic: 895 € einmalig + 495 € monatlich. Cora Pro: 1.495 € einmalig + 895 € monatlich. Enterprise wird individuell kalkuliert. Entscheidend für die Auswahl sind Umfang des Wissens, Gesprächslogik, Lead-Prozess und gewünschte Integrationen.",
+ PRICE:()=> "Cora Basic kostet 895 € einmalig plus 495 € monatlich. Cora Pro kostet 1.495 € einmalig plus 895 € monatlich. Enterprise wird individuell kalkuliert. Für einen typischen SHK-Betrieb ist Pro in der Regel das umfassendere Paket, wenn Cora nicht nur Fragen beantworten, sondern Interessenten aktiv qualifizieren und Anfragen strukturiert vorbereiten soll. Basic ist dennoch ein sehr guter Einstieg, wenn zunächst Webchat, Unternehmenswissen und einfache Lead-Erfassung im Vordergrund stehen.",
  FEATURES:()=> state.industry?contextualIndustryResponse():"Cora beantwortet nicht nur FAQs. Sie kann Unternehmenswissen erklären, Anliegen erkennen, Gespräche führen, Rückfragen stellen, Interessenten qualifizieren und – je nach Setup – strukturierte Leads an den gewünschten Prozess übergeben.",
  LEAD:()=> state.industry?answerIndustry("lead"): "Cora kann Interessenten Schritt für Schritt qualifizieren: Anliegen erkennen, relevante Rückfragen stellen, Kontaktdaten aufnehmen und die Anfrage strukturiert weitergeben.",
- SETUP:()=> "Beim Setup werden Unternehmenswissen, Leistungen, FAQ, Tonalität, Gesprächslogik, Lead-Felder und Weiterleitungen auf den konkreten Betrieb zugeschnitten. Danach wird Cora in die Website eingebunden.",
- HOW_IT_WORKS:()=> "Cora arbeitet als dialogorientierter Webassistent. Sie ordnet die Nachricht ein, berücksichtigt den bisherigen Gesprächskontext, antwortet passend zum Unternehmen und entscheidet, ob eine Information, Rückfrage oder Lead-Qualifizierung als nächster Schritt sinnvoll ist.",
+ SETUP:()=> "Der Prozess läuft typischerweise in sechs Schritten: 1. Website und Ziel prüfen. 2. Leistungen, FAQ und Unternehmenswissen strukturieren. 3. Gesprächslogik und Lead-Felder festlegen. 4. Cora konfigurieren und testen. 5. Auf der Website einbinden. 6. Nach dem Start Gespräche und Leads auswerten und den Ablauf optimieren.",
+ HOW_IT_WORKS:()=> "Cora arbeitet als dialogorientierter Webassistent. Sie ordnet die Nachricht ein, berücksichtigt den bisherigen Gesprächskontext, antwortet passend zum Unternehmen und entscheidet, ob eine Information, Rückfrage oder Lead-Qualifizierung als nächster Schritt sinnvoll ist. Bei einem SHK-Betrieb kann das zum Beispiel von 'Ich brauche eine neue Heizung' über Objekt, Leistung und Zeitraum bis zur konkreten Rückrufanfrage führen.",
  PRIVACY:()=> "Datenschutz hängt vom konkreten Einsatz, den Daten, Anbietern, Speicherorten und der technischen Integration ab. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale Rechtsgarantie wäre nicht seriös.",
  INTEGRATIONS:()=> "Je nach Projekt können Formulare, CRM, Kalender und Automatisierungsprozesse angebunden werden. Diese Demo behauptet keine Schnittstelle als aktiv, wenn sie nicht tatsächlich implementiert ist.",
- PURCHASE:()=> "Für den Start sind Unternehmen, Website, Branche und gewünschter Einsatz sinnvoll. Beschreiben Sie mir Ihren konkreten Anwendungsfall; ich kann daraus direkt einen passenden Cora-Gesprächsablauf ableiten.",
- CONTACT:()=> "Über das Anfrageformular können Sie Kontakt aufnehmen. Vorher kann Cora bereits Branche, Anwendungsfall und gewünschte Lead-Funktion strukturieren.",
+ PURCHASE:()=> "Wenn Sie Cora ernsthaft einsetzen möchten, ist der nächste sinnvolle Schritt ein kurzes Beratungsgespräch. Dabei klären wir Website, Branche, Ziele, gewünschte Lead-Daten und den passenden Umfang. Wenn Sie mir Name, Unternehmen, E-Mail und Website hinterlassen, kann die Anfrage direkt strukturiert weiterbearbeitet werden.",
+ CONTACT:()=> "Der schnellste nächste Schritt ist ein kurzes Beratungsgespräch. Hinterlassen Sie dafür im Anfrageformular Name, Unternehmen, E-Mail, Website und Ihr Ziel mit Cora. So können wir bereits vor dem Gespräch einschätzen, ob Basic, Pro oder ein individueller Enterprise-Aufbau sinnvoll ist.",
  INDUSTRIES:()=> "Cora lässt sich auf unterschiedliche Geschäftsmodelle zuschneiden, unter anderem Fitness, SHK, Handwerk, Gastronomie, Hotels, Autohäuser, Immobilien, Kanzleien, Praxen und Steuerberatung."
 };
 
