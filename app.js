@@ -5,9 +5,16 @@ const $=id=>document.getElementById(id);
 const demoMessages=$("demoMessages"),demoInput=$("demoInput"),demoSend=$("demoSend");
 const state={industry:null,turns:0,stage:"discovery",profile:{goal:null,service:null,need:null,location:null,timing:null,contactIntent:null,answers:[]},conversation:{leadMode:false,questionIndex:0}};
 
-const industryLabels={BEAUTY:"Kosmetiksalon",FITNESS:"Fitnessstudio",SHK:"SHK-/Sanitär-/Heizungsbetrieb",RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",TAX_ADVISOR:"Steuerberatung",CRAFT:"Handwerksbetrieb"};
+const industryLabels={WHOLESALE_MOBILE:"Mobilfunk-Großhandel",BEAUTY:"Kosmetiksalon",FITNESS:"Fitnessstudio",SHK:"SHK-/Sanitär-/Heizungsbetrieb",RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",TAX_ADVISOR:"Steuerberatung",CRAFT:"Handwerksbetrieb"};
 
 const industryData={
+WHOLESALE_MOBILE:{
+ intro:"Für einen Mobilfunk-Großhandel ist Cora besonders interessant, wenn Website-Besucher nicht nur Informationen suchen, sondern als Händler, Geschäftskunden oder Vertriebspartner mit konkretem Bedarf anfragen sollen.",
+ useCases:["Händler und gewerbliche Interessenten gezielt zu passenden Produkt- und Warengruppen führen","zwischen Neukunde, Bestandskunde, Wiederverkäufer und allgemeiner Produktanfrage unterscheiden","Bedarf wie Geräte, Zubehör, Mengen, Marken oder bestimmte Produktgruppen erfassen","Liefer-, Preis- oder Angebotsinteresse erkennen und die Anfrage entsprechend einordnen","Unternehmensdaten und Kontaktdaten erst nach geklärtem Bedarf aufnehmen","die Anfrage mit den bereits genannten Informationen strukturiert an den Vertrieb übergeben"],
+ questions:["Was suchen Sie aktuell für Ihr Geschäft – bestimmte Smartphones, Zubehör, Produktgruppen oder ein konkretes Sortiment?","Sind Sie bereits Händler bzw. Wiederverkäufer oder möchten Sie erstmals mit Ihnen als Lieferant arbeiten?","Geht es eher um eine konkrete Bestellung, ein Angebot oder zunächst um Informationen zu verfügbaren Produkten und Konditionen?","Welche Mengen, Marken oder Produktgruppen sind für Sie ungefähr relevant?","Wie können wir Sie für die weitere Abstimmung erreichen?"],
+ examples:["Smartphones","Zubehör","Wiederverkäufer","B2B-Angebot","größere Stückzahlen"],
+ value:"Cora kann aus einer allgemeinen B2B-Anfrage schrittweise ein verwertbares Vertriebsgespräch machen. Der entscheidende Unterschied zu einem einfachen Kontaktformular: Der Vertrieb erhält bereits Kontext zu Rolle, Bedarf und konkretem Interesse."
+},
 BEAUTY:{intro:"Für einen Kosmetiksalon ist Cora besonders interessant, wenn aus Website-Besuchern mehr konkrete Termin-, Beratungs- und Behandlungsanfragen entstehen sollen.",useCases:["Behandlungen verständlich erklären und passende Leistungen anhand des Wunsches einordnen","zwischen konkretem Terminwunsch, Erstberatung und allgemeiner Information unterscheiden","Interesse und Ziel erfassen, z. B. Hautbild, Haarentfernung, Nägel, Wimpern oder Ästhetik","Wunschzeitraum und relevante Anforderungen aufnehmen","Kontaktdaten erst dann abfragen, wenn ein konkretes Interesse erkennbar ist","die Anfrage mit den bereits genannten Informationen strukturiert an den Salon übergeben"],questions:["Welche Behandlung oder welches Ergebnis interessiert Sie?","Geht es um einen konkreten Termin oder möchten Sie zunächst beraten werden?","Was ist Ihnen dabei besonders wichtig?","Wann wäre ein passender Zeitraum?","Wie können wir Sie für die weitere Abstimmung erreichen?"],examples:["Gesichtsbehandlung","Haarentfernung","Nägel","Wimpern","ästhetische Behandlung"],value:"Der entscheidende Mehrwert ist nicht der Chat an sich: Cora beantwortet zuerst das Anliegen und nutzt die Antworten anschließend, um die Anfrage sinnvoll zu qualifizieren. Der Salon erhält dadurch mehr Kontext als bei einem einfachen „Name + Telefonnummer“-Formular und muss im ersten Kontakt weniger Grundlagen erfragen."},
 FITNESS:{intro:"Für ein Fitnessstudio kann Cora Besucher zu Probetraining, Mitgliedschaft oder Beratung führen und das konkrete Ziel des Interessenten erfassen.",useCases:["Mitgliedschaften und Leistungen erklären","Trainingsziel erkennen","Probetraining oder Beratung vorbereiten","Kurse und Öffnungszeiten beantworten","Interesse nach Zeitraum und Bedarf konkretisieren","Kontaktanfragen strukturiert erfassen"],questions:["Was möchten Sie erreichen – Muskelaufbau, Abnehmen, Ausdauer oder allgemeine Fitness?","Möchten Sie ein Probetraining oder zunächst Informationen zu einer Mitgliedschaft?","Wann wäre ein passender Zeitraum?","Wie können wir Sie für die weitere Abstimmung erreichen?"],examples:["Probetraining","Mitgliedschaft","Personal Training","Abnehmen"],value:"Der Mehrwert liegt darin, dass aus einem anonymen Website-Besuch ein konkreter Gesprächsanlass werden kann und Ihr Team bereits weiß, welches Ziel und welches Interesse der Besucher hat."},
 SHK:{intro:"Für einen SHK-, Sanitär- oder Heizungsbetrieb kann Cora aus einer allgemeinen Website-Frage eine strukturierte Projekt- oder Rückrufanfrage entwickeln.",useCases:["Reparatur, Wartung, Modernisierung und Neubau unterscheiden","Leistung wie Heizung, Wärmepumpe, Sanitär, Bad oder Klima einordnen","Objektart, Ort und Dringlichkeit erfassen","Projektinformationen strukturiert aufnehmen","Rückruf- und Angebotsanfragen vorbereiten"],questions:["Geht es um Reparatur, Wartung, Modernisierung oder Neubau?","Welche Leistung oder Anlage ist betroffen?","Um welche Immobilie handelt es sich und wo befindet sie sich?","Wie dringend ist die Anfrage?","Wie kann der Betrieb Sie erreichen?"],examples:["Wärmepumpe","Heizung defekt","Badsanierung","Angebot"],value:"Der Betrieb erhält vor dem ersten Rückruf bereits die wichtigsten Angaben und kann dadurch gezielter reagieren, statt bei jeder Anfrage wieder bei null zu beginnen."},
@@ -32,6 +39,7 @@ function normalize(value){return String(value||"").toLowerCase().replace(/ä/g,"
 function detectIndustry(text){
  const t=normalize(text);
  const patterns={
+  WHOLESALE_MOBILE:["grosshandel mobilfunk","mobilfunk grosshandel","grosshandel fuer mobilfunk","grosshandel für mobilfunk","mobilfunk grosshandel und zubehoer","mobilfunk und zubehoer grosshandel","mobilfunk zubehoer grosshandel","telekommunikationsgrosshandel","telekommunikation grosshandel"],
   BEAUTY:["kosmetiksalon","kosmetiksaloon","kosmetiksalons","kosmetik salon","beautysalon","beauty salon","nagelstudio","friseursalon","friseur","wimpern","gesichtsbehandlung","haarentfernung","aesthetik"],
   FITNESS:["fitnessstudio","fitness studio","fitness","probetraining","mitgliedschaft","personal training"],
   SHK:["heizung","heizungsbau","heizungsbauer","waermepumpe","sanitaer","sanitaerbetrieb","shk","badsanierung","klima","wasserinstallation"],
@@ -63,21 +71,21 @@ function knownGoalText(){return state.profile.goal?"Ihr Ziel habe ich bereits er
 
 function responseForKnownGoal(){
  const data=industryData[state.industry];
- if(!data)return "Das Ziel ist klar: mehr qualifizierte Kundenkontakte. Cora kann Besucher nicht nur informieren, sondern aus dem Gespräch relevante Kaufsignale und Bedarfsinformationen erfassen. Für eine konkrete Empfehlung fehlt mir jetzt nur noch die Branche: In welchem Geschäftsfeld sind Sie tätig?";
+ if(!data)return "Ihr Ziel ist klar: mehr qualifizierte Kundenkontakte. Cora kann Besucher informieren, Bedarf konkretisieren und bei echtem Interesse eine strukturierte Anfrage vorbereiten. Welche Branche oder welches Geschäftsmodell möchten Sie mit Cora abbilden?";
  const q=data.questions[Math.min(state.conversation.questionIndex, data.questions.length-1)];
  return "Verstanden. Ihr Ziel ist bereits erfasst: mehr qualifizierte Kundenkontakte.\\n\\nCora kann dabei drei Dinge verbinden: Fragen sofort beantworten, den konkreten Bedarf des Besuchers herausarbeiten und – wenn echtes Interesse besteht – eine strukturierte Anfrage vorbereiten. Das Ergebnis ist nicht nur ein Kontakt, sondern mehr verwertbarer Kontext für Ihr Team.\\n\\nFür Ihren "+industryLabels[state.industry]+" ist jetzt entscheidend, welche Leistung oder welches konkrete Anliegen hinter dem Kontakt steckt. "+q;
 }
 
 function directAnswer(text){
  const t=normalize(text);
- if(/was kann cora|was macht cora|wie hilft cora|wofuer|wofür/.test(t))return "Cora ist ein KI-Webagent für Websites. Sie beantwortet Besucherfragen, führt Interessenten durch relevante Inhalte und kann bei konkretem Interesse Informationen für eine qualifizierte Anfrage erfassen. Sie ersetzt dabei nicht Ihr Team, sondern bereitet Gespräche besser vor."; 
+ if(/was kann cora|was macht cora|wie hilft cora|wofuer|wofür/.test(t))return "Cora ist nicht nur ein FAQ-Chat. Sie kann Besucherfragen beantworten, auf das konkrete Anliegen eingehen, passende Rückfragen stellen und bei echtem Interesse eine strukturierte Anfrage vorbereiten. So entsteht aus einem Website-Besuch ein Gespräch mit verwertbarem Kontext.";
  if(/lead erfassen|leads erfassen|kundenkontakte erfassen|kontakt erfassen/.test(t))return "Ja. Cora kann Kontaktdaten mit dem konkreten Anliegen verbinden. Statt nur Name und Telefonnummer zu sammeln, kann der Dialog vorher klären, wonach der Besucher sucht, welche Leistung relevant ist und welcher nächste Schritt gewünscht wird. Welche Angaben sinnvoll sind, hängt vom jeweiligen Unternehmen ab.";
  if(/einrichtung|integration|einbinden/.test(t))return "Die Einrichtung beginnt mit Ihrem Anwendungsfall: Unternehmenswissen und gewünschte Gesprächswege werden definiert, anschließend wird Cora in die Website eingebunden und mit realistischen Fragen getestet. Erst danach wird der produktive Ablauf festgelegt.";
  return null;
 }
 
 function packageForIndustry(){
- if(["BEAUTY","FITNESS","AUTOHAUS","SHK","REAL_ESTATE","CRAFT"].includes(state.industry))return packageGuidance.PRO;
+ if(["WHOLESALE_MOBILE","BEAUTY","FITNESS","AUTOHAUS","SHK","REAL_ESTATE","CRAFT"].includes(state.industry))return packageGuidance.PRO;
  return packageGuidance.BASIC+" "+packageGuidance.PRO;
 }
 
