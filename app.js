@@ -52,11 +52,19 @@ function remember(text){
  const t=normalize(text);
  const industry=detectIndustry(text);
  if(industry)state.industry=industry;
- if(/mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|anfragen gewinnen/.test(t))state.profile.goal="mehr qualifizierte Kunden- und Terminanfragen";
+ if(/qualifizierte kundenkontakte|qualifizierte kunden|qualifizierte leads|qualifizierten kunden|kundenkontakte|kunden kontakt|kundenkontakte gewinnen|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|anfragen gewinnen/.test(t))state.profile.goal="mehr qualifizierte Kundenkontakte";
  if(/gesichtsbehandlung|haarentfernung|naegel|wimpern|aesthetik|haut/.test(t))state.profile.service=text;
  if(/termin/.test(t))state.profile.contactIntent="Termin";
  if(/beratung/.test(t))state.profile.contactIntent="Beratung";
  state.profile.answers.push(String(text).trim());
+}
+
+function knownGoalText(){return state.profile.goal?"Ihr Ziel habe ich bereits erfasst: "+state.profile.goal+".":"";}
+
+function responseForKnownGoal(){
+ const data=industryData[state.industry];
+ if(!data)return "Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte. Damit ich den Ablauf passend zu Ihrem Unternehmen zeigen kann, fehlt mir nur noch Ihre Branche. In welchem Bereich sind Sie tätig?";
+ return "Verstanden. Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte. Cora kann Besucher zunächst informieren, ihr konkretes Anliegen erkennen und anschließend relevante Angaben für eine strukturierte Anfrage erfassen. Dadurch entsteht mehr Kontext als bei einem einfachen Kontaktformular.\\n\\nFür Ihren "+industryLabels[state.industry]+" würde ich den Ablauf jetzt auf Ihren konkreten Anwendungsfall zuschneiden. "+data.questions[0];
 }
 
 function packageForIndustry(){
@@ -99,14 +107,18 @@ function answer(text){
  state.turns++;remember(text);
  const t=normalize(text);
  if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
- if(!state.industry)return "Damit ich Ihnen nicht pauschal ein Paket nenne: Welche Branche betreiben Sie und was möchten Sie über Ihre Website erreichen – zum Beispiel mehr Termine, mehr Angebotsanfragen oder mehr qualifizierte Kundenkontakte?";
+ if(!state.industry){
+  if(state.profile.goal)return responseForKnownGoal();
+  return "Damit ich Ihnen nicht pauschal ein Paket nenne: Welche Branche betreiben Sie und was möchten Sie über Ihre Website erreichen – zum Beispiel mehr Termine, mehr Angebotsanfragen oder mehr qualifizierte Kundenkontakte?";
+ }
  const data=industryData[state.industry];
+ if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)) return responseForKnownGoal();
  if(/welches paket|welcher tarif|basic|pro|enterprise|was passt|geeignet|empfehl/.test(t)){
   if(/wie hilft|was kann|mehrwert|nutzen|einsatz|mehr kunden|mehr anfragen|mehr termine/.test(t))return startQualification();
   return packageForIndustry()+"\\n\\nBasic ist sinnvoll, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Pro ist der naheliegende Ausgangspunkt, wenn Cora aktiv Bedarf ermitteln und Leads qualifizieren soll. Enterprise prüfen wir bei komplexeren individuellen Anforderungen.\\n\\nDamit ich es für Ihren Betrieb konkret einordne: "+data.questions[0];
  }
  if(/wie hilft|was kann|mehrwert|nutzen|einsatz|wie funktioniert|anwendungsfall|anwendungsfaelle|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen/.test(t))return startQualification();
- if(/lead|qualifiz|anfrage|kontakt aufnehmen/.test(t))return startQualification();
+ if(/lead|qualifiz|anfrage|kontakt aufnehmen/.test(t))return state.profile.goal?responseForKnownGoal():startQualification();
  if(/dsgvo|datenschutz/.test(t))return "Datenschutz muss anhand des konkreten Setups, der verwendeten Anbieter, Datenarten, Speicherorte und Prozesse geprüft werden. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale DSGVO-Rechtsgarantie wäre nicht seriös. Wenn Sie möchten, können wir als Nächstes festlegen, welche Daten Cora überhaupt für Ihre Leads erfassen soll.";
  if(/integration|crm|kalender|api|n8n|hubspot|salesforce|pipedrive/.test(t))return "Je nach Projekt können Formulare, CRM, Kalender oder Automatisierungen angebunden werden. Entscheidend ist zuerst, wohin eine qualifizierte Anfrage bei Ihnen gehen soll. Welche Systeme oder Prozesse nutzen Sie heute?";
  if(/preis|kosten|monatlich|einmalig/.test(t))return "Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\\n\\nBasic ist für Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung gedacht. Pro ist für aktive Gesprächsführung und Lead-Qualifizierung ausgelegt. Die endgültige Einordnung erfolgt anhand Ihres konkreten Einsatzes.";
