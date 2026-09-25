@@ -14,7 +14,7 @@ const state={
 const industryLabels={
  RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",
  LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",FITNESS:"Fitnessstudio",TAX_ADVISOR:"Steuerberatung",
- CRAFT:"Handwerksbetrieb",SHK:"SHK-/Sanitär- und Heizungsbetrieb"
+ CRAFT:"Handwerksbetrieb",SHK:"SHK-/Sanitär- und Heizungsbetrieb",BEAUTY:"Kosmetiksalon"
 };
 
 const intents=[
@@ -36,6 +36,7 @@ const intents=[
  {id:"DENTAL",p:["zahnarzt","zahn","zahnarztpraxis","behandlung","zahnschmerzen"]},
  {id:"FITNESS",p:["fitness","fitnessstudio","mitgliedschaft","probetraining","kurs","personal training"]},
  {id:"TAX_ADVISOR",p:["steuerberater","steuerberatung","steuerkanzlei"]},
+ {id:"BEAUTY",p:["kosmetiksalon","kosmetik","beauty","beautysalon","nagelstudio","friseursalon","friseur","ästhetik","aesthetik","wimpern","gesichtsbehandlung"]},
  {id:"BEAUTY",p:["kosmetiksalon","kosmetik","beauty","beautysalon","nagelstudio","friseursalon","friseur","ästhetik","aesthetik","wimpern","gesichtsbehandlung"]},
  {id:"SHK",p:["sanitär","sanitaer","heizung","heizungsbau","heizungsbauer","heizungstechnik","shk","wärmepumpe","waermepumpe","klima","klimatechnik","bad","badsanierung","wasserinstallation","gasinstallation"]},
  {id:"CRAFT",p:["handwerk","handwerker","meisterbetrieb","projektanfrage","elektriker","maler","installateur","bauunternehmen"]}
