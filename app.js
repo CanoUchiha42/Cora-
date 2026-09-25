@@ -77,7 +77,9 @@ function detectIndustry(text){
  if(/gross|aussenhandel|grosshandel|grosshaendler/.test(t)&&/mobilfunk|monilfunk|telekommunikation|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
  if(/mobilfunk|monilfunk|telekommunikation/.test(t)&&/handel|haendler|gross|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
  return null;
-}\n\nfunction remember(text){
+}
+
+function remember(text){
  const raw=String(text||"").trim(),t=normalize(raw);
  const industry=detectIndustry(raw);
  if(industry)state.industry=industry;
@@ -89,7 +91,9 @@ function detectIndustry(text){
  if(/termin/.test(t))state.profile.contactIntent="Termin";
  if(/beratung/.test(t))state.profile.contactIntent="Beratung";
  state.profile.answers.push(raw);
-}\n\nfunction knownGoalText(){return state.profile.goal?"Ihr Ziel habe ich bereits erfasst: "+state.profile.goal+".":"";}
+}
+
+function knownGoalText(){return state.profile.goal?"Ihr Ziel habe ich bereits erfasst: "+state.profile.goal+".":"";}
 
 function responseForKnownGoal(){
  const data=industryData[state.industry];
@@ -108,7 +112,9 @@ function directAnswer(text){
  if(/einrichtung|integration|einbinden|crm|kalender|api|n8n/.test(t))
    return "Die Einrichtung wird auf den tatsächlichen Vertriebsprozess zugeschnitten: Wissen, Zielgruppen, Gesprächswege, Qualifikationskriterien, Übergabe und Kontaktziel. Je nach Projekt können anschließend CRM, E-Mail, Kalender oder Automatisierungen angebunden werden.";
  return null;
-}\n\nfunction packageForIndustry(){
+}
+
+function packageForIndustry(){
  if(["WHOLESALE_MOBILE","BEAUTY","FITNESS","AUTOHAUS","SHK","REAL_ESTATE","CRAFT"].includes(state.industry))return packageGuidance.PRO;
  return packageGuidance.BASIC+" "+packageGuidance.PRO;
 }
@@ -121,7 +127,9 @@ function startQualification(){
  return context+"Für einen "+industryLabels[state.industry]+" würde ich nicht einfach mehr Chat-Nachrichten sammeln, sondern den Dialog auf verwertbare Geschäftsanfragen ausrichten. Cora kann zuerst die Frage beantworten, dann erkennen, was der Besucher konkret erreichen möchte, und anschließend nur die Informationen abfragen, die für den nächsten Vertriebsschritt relevant sind."+
  "\n\nZum Beispiel kann Cora bei Ihnen zwischen Neukunde, Bestandskunde, Händler/Wiederverkäufer, Produktanfrage und konkretem Angebotsbedarf unterscheiden. "+data.intro+
  "\n\nDamit wir keinen Fragebogen daraus machen, starten wir mit der wichtigsten Information: "+(state.profile.intent||data.questions[0]);
-}\n\nfunction nextQualification(answer){
+}
+
+function nextQualification(answer){
  const data=industryData[state.industry],raw=String(answer||"").trim(),t=normalize(raw),idx=state.conversation.questionIndex;
  state.profile.answers.push(raw);
  if(idx===0){state.profile.need=raw;if(!state.profile.service)state.profile.service=raw;}
@@ -152,7 +160,9 @@ function startQualification(){
  }
  state.conversation.leadMode=false;state.stage="contact";
  return "Damit ist aus dem allgemeinen Website-Interesse eine strukturierte Anfrage geworden.\n\nCora hat die relevanten Angaben aus dem Gespräch übernommen, statt dieselben Informationen erneut abzufragen. Der nächste Schritt ist die Übergabe an den Vertrieb bzw. an das gewünschte Kontaktziel.";
-}\n\nfunction answer(text){
+}
+
+function answer(text){
  state.turns++;remember(text);
  const t=normalize(text);
  const hasLeadGoal=/lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t);
@@ -164,15 +174,6 @@ function startQualification(){
    const result=state.conversation.leadMode ? nextQualification(text) : startQualification();
    persistState();
    return result;
- }
-
- // Commercial intent must always win over generic FAQ routing once
- // industry + lead goal are known. This also handles short follow-ups such
- // as "lead sammeln", "mehr leads" or "lead sammlen".
- const hasLeadGoal=/lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t);
- const isNonLeadTopic=/preis|kosten|dsgvo|datenschutz|integration|crm|wie funktioniert.*integration/.test(t);
- if(state.industry && state.profile.goal && !state.conversation.leadMode && hasLeadGoal && !isNonLeadTopic){
-   return startQualification();
  }
 
  if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
