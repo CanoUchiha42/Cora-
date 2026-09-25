@@ -63,8 +63,17 @@ function knownGoalText(){return state.profile.goal?"Ihr Ziel habe ich bereits er
 
 function responseForKnownGoal(){
  const data=industryData[state.industry];
- if(!data)return "Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte. Damit ich den Ablauf passend zu Ihrem Unternehmen zeigen kann, fehlt mir nur noch Ihre Branche. In welchem Bereich sind Sie tätig?";
- return "Verstanden. Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte. Cora kann Besucher zunächst informieren, ihr konkretes Anliegen erkennen und anschließend relevante Angaben für eine strukturierte Anfrage erfassen. Dadurch entsteht mehr Kontext als bei einem einfachen Kontaktformular.\\n\\nFür Ihren "+industryLabels[state.industry]+" würde ich den Ablauf jetzt auf Ihren konkreten Anwendungsfall zuschneiden. "+data.questions[0];
+ if(!data)return "Das Ziel ist klar: mehr qualifizierte Kundenkontakte. Cora kann Besucher nicht nur informieren, sondern aus dem Gespräch relevante Kaufsignale und Bedarfsinformationen erfassen. Für eine konkrete Empfehlung fehlt mir jetzt nur noch die Branche: In welchem Geschäftsfeld sind Sie tätig?";
+ const q=data.questions[Math.min(state.conversation.questionIndex, data.questions.length-1)];
+ return "Verstanden. Ihr Ziel ist bereits erfasst: mehr qualifizierte Kundenkontakte.\\n\\nCora kann dabei drei Dinge verbinden: Fragen sofort beantworten, den konkreten Bedarf des Besuchers herausarbeiten und – wenn echtes Interesse besteht – eine strukturierte Anfrage vorbereiten. Das Ergebnis ist nicht nur ein Kontakt, sondern mehr verwertbarer Kontext für Ihr Team.\\n\\nFür Ihren "+industryLabels[state.industry]+" ist jetzt entscheidend, welche Leistung oder welches konkrete Anliegen hinter dem Kontakt steckt. "+q;
+}
+
+function directAnswer(text){
+ const t=normalize(text);
+ if(/was kann cora|was macht cora|wie hilft cora|wofuer|wofür/.test(t))return "Cora ist ein KI-Webagent für Websites. Sie beantwortet Besucherfragen, führt Interessenten durch relevante Inhalte und kann bei konkretem Interesse Informationen für eine qualifizierte Anfrage erfassen. Sie ersetzt dabei nicht Ihr Team, sondern bereitet Gespräche besser vor."; 
+ if(/lead erfassen|leads erfassen|kundenkontakte erfassen|kontakt erfassen/.test(t))return "Ja. Cora kann Kontaktdaten mit dem konkreten Anliegen verbinden. Statt nur Name und Telefonnummer zu sammeln, kann der Dialog vorher klären, wonach der Besucher sucht, welche Leistung relevant ist und welcher nächste Schritt gewünscht wird. Welche Angaben sinnvoll sind, hängt vom jeweiligen Unternehmen ab.";
+ if(/einrichtung|integration|einbinden/.test(t))return "Die Einrichtung beginnt mit Ihrem Anwendungsfall: Unternehmenswissen und gewünschte Gesprächswege werden definiert, anschließend wird Cora in die Website eingebunden und mit realistischen Fragen getestet. Erst danach wird der produktive Ablauf festgelegt.";
+ return null;
 }
 
 function packageForIndustry(){
@@ -106,6 +115,8 @@ function nextQualification(answer){
 function answer(text){
  state.turns++;remember(text);
  const t=normalize(text);
+ const direct=directAnswer(text);
+ if(direct && !state.conversation.leadMode)return direct;
  if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
  if(!state.industry){
   if(/sag.*anders|was anderes|andere antwort|weiter|naechste|nächste|konkret/.test(t) && state.profile.goal){
