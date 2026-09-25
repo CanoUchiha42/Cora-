@@ -108,6 +108,9 @@ function answer(text){
  const t=normalize(text);
  if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
  if(!state.industry){
+  if(/sag.*anders|was anderes|andere antwort|weiter|naechste|nächste|konkret/.test(t) && state.profile.goal){
+   return "Ja. Wir können die Paketfrage zunächst zurückstellen. Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte.\\n\\nCora kann dafür Besucher im Gespräch von der ersten Frage bis zu einer strukturierten Anfrage begleiten – Informationen geben, Bedarf erkennen und erst bei konkretem Interesse relevante Kontaktdaten erfassen.\\n\\nWenn Sie möchten, testen wir das direkt an Ihrem Unternehmen. Nennen Sie mir nur Ihre Branche, dann spiele ich einen realistischen Gesprächsablauf für Ihren Anwendungsfall durch.";
+  }
   if(state.profile.goal)return responseForKnownGoal();
   return "Damit ich Ihnen nicht pauschal ein Paket nenne: Welche Branche betreiben Sie und was möchten Sie über Ihre Website erreichen – zum Beispiel mehr Termine, mehr Angebotsanfragen oder mehr qualifizierte Kundenkontakte?";
  }
