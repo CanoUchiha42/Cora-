@@ -265,6 +265,35 @@ demoForm?.addEventListener("submit",e=>{
  demoInput.focus();
 });
 
+const roiEls={
+ visitors:document.getElementById("roiVisitors"),rate:document.getElementById("roiRate"),close:document.getElementById("roiClose"),
+ value:document.getElementById("roiValue"),lift:document.getElementById("roiLift"),liftValue:document.getElementById("roiLiftValue"),
+ leads:document.getElementById("roiLeads"),revenue:document.getElementById("roiRevenue"),year:document.getElementById("roiYear"),cta:document.getElementById("roiCta")
+};
+function euro(n){return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Math.max(0,n));}
+function updateROI(){
+ if(!roiEls.visitors)return;
+ const visitors=Math.max(0,Number(roiEls.visitors.value)||0);
+ const rate=Math.max(0,Number(roiEls.rate.value)||0)/100;
+ const close=Math.max(0,Number(roiEls.close.value)||0)/100;
+ const value=Math.max(0,Number(roiEls.value.value)||0);
+ const lift=Math.max(0,Number(roiEls.lift.value)||0)/100;
+ const extraLeads=visitors*lift;
+ const extraRevenue=extraLeads*close*value;
+ if(roiEls.leads)roiEls.leads.textContent=extraLeads.toFixed(1).replace(".",",");
+ if(roiEls.revenue)roiEls.revenue.textContent=euro(extraRevenue);
+ if(roiEls.year)roiEls.year.textContent=euro(extraRevenue*12);
+ if(roiEls.liftValue)roiEls.liftValue.textContent="+"+(lift*100).toFixed(1).replace(".",",")+" %-Punkte";
+ if(roiEls.cta){
+  roiEls.cta.onclick=()=>{
+   const msg=document.querySelector('[name="message"]');
+   if(msg)msg.value="Ich habe den Cora ROI-Rechner genutzt. Website-Besucher/Monat: "+visitors+" | Anfragequote aktuell: "+(rate*100).toFixed(1)+"% | Abschlussquote: "+(close*100).toFixed(1)+"% | Auftragswert: "+euro(value)+" | Szenario: +"+(lift*100).toFixed(1)+" Prozentpunkte. Ich möchte dazu ein Beratungsgespräch.";
+  };
+ }
+}
+[roiEls.visitors,roiEls.rate,roiEls.close,roiEls.value,roiEls.lift].forEach(el=>el?.addEventListener("input",updateROI));
+updateROI();
+
 const leadForm=document.getElementById("leadForm"),status=document.getElementById("formStatus");
 leadForm?.addEventListener("submit",async e=>{
  e.preventDefault();
