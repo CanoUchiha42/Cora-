@@ -5,51 +5,86 @@ const menuBtn=document.getElementById("menuBtn"),mobileNav=document.getElementBy
 if(menuBtn&&mobileNav){menuBtn.addEventListener("click",()=>{const open=mobileNav.classList.toggle("open");menuBtn.setAttribute("aria-expanded",String(open));menuBtn.setAttribute("aria-label",open?"Menü schließen":"Menü öffnen")});mobileNav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>{mobileNav.classList.remove("open");menuBtn.setAttribute("aria-expanded","false")}))}
 document.querySelectorAll("[data-scroll-demo]").forEach(btn=>btn.addEventListener("click",()=>document.getElementById("demo")?.scrollIntoView({behavior:"smooth",block:"start"})));
 const demoMessages=document.getElementById("demoMessages"),demoInput=document.getElementById("demoInput"),demoForm=document.getElementById("demoForm");
-const state={industry:null,lastIntent:null};
-const industryLabels={RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",FITNESS:"Fitnessstudio",TAX_ADVISOR:"Steuerberatung",CRAFT:"Handwerksbetrieb"};
+const state={industry:null,lastIntent:null,profile:{company:null,website:null,location:null,needs:[],service:null,budget:null},turns:0};
+const industryLabels={RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",FITNESS:"Fitnessstudio",TAX_ADVISOR:"Steuerberatung",CRAFT:"Handwerksbetrieb",SHK:"SHK-/Sanitär- und Heizungsbetrieb",AGENCY:"Dienstleistungsunternehmen"};
+
 const intents=[
-{id:"PRICE",p:["was kostet","wieviel kostet","wie viel kostet","preis","preise","kosten","monatlich","basic","pro","enterprise"]},
-{id:"FEATURES",p:["was kann","funktionen","feature","kann cora","fähigkeiten","faehigkeiten"]},
-{id:"LEAD",p:["lead","anfrage erfassen","anfragen erfassen","kontaktdaten","qualifizieren","vorqualifizieren","interessent"]},
-{id:"SETUP",p:["einrichten","eingerichtet","einbindung","installieren","website einbinden","implementierung"]},
+{id:"PRICE",p:["was kostet","wieviel kostet","wie viel kostet","preis","preise","kosten","monatlich","einmalig","basic","pro","enterprise"]},
+{id:"FEATURES",p:["was kann","funktionen","feature","kann cora","fähigkeiten","faehigkeiten","möglichkeiten","moeglichkeiten"]},
+{id:"LEAD",p:["lead","anfrage erfassen","anfragen erfassen","kontaktdaten","qualifizieren","vorqualifizieren","interessent","anfrage aufnehmen"]},
+{id:"SETUP",p:["einrichten","eingerichtet","einbindung","installieren","website einbinden","implementierung","aufsetzen"]},
 {id:"HOW_IT_WORKS",p:["wie funktioniert","wie arbeitet","wie läuft","wie laeuft","ablauf","prozess"]},
 {id:"PRIVACY",p:["dsgvo","datenschutz","personenbezogene daten","datenverarbeitung","datensicherheit"]},
-{id:"INTEGRATIONS",p:["crm","kalender","calendar","schnittstelle","api","hubspot","salesforce","pipedrive","zapier","n8n"]},
+{id:"INTEGRATIONS",p:["crm","kalender","calendar","schnittstelle","api","hubspot","salesforce","pipedrive","zapier","n8n","google sheets"]},
 {id:"DEMO",p:["demo","ausprobieren","testen","test"]},
 {id:"PURCHASE",p:["kaufen","buchen","bestellen","angebot","beauftragen","starten"]},
 {id:"CONTACT",p:["kontakt","mensch sprechen","mit jemandem","rückruf","rueckruf","berater"]},
 {id:"INDUSTRIES",p:["welche branche","welche branchen","für wen","fuer wen","geeignet"]},
-{id:"RESTAURANT",p:["restaurant","reservierung","reservierungen","speisekarte","tisch"]},
+{id:"RESTAURANT",p:["restaurant","reservierung","reservierungen","speisekarte","tisch","gastronomie"]},
 {id:"HOTEL",p:["hotel","zimmer","check-in","check in","frühstück","fruehstueck","gäste"]},
-{id:"AUTOHAUS",p:["autohaus","fahrzeug","fahrzeuge","probefahrt","werkstatt","fahrzeuganfrage"]},
+{id:"AUTOHAUS",p:["autohaus","fahrzeug","fahrzeuge","probefahrt","werkstatt","fahrzeuganfrage","autohändler"]},
 {id:"REAL_ESTATE",p:["immobilien","immobilie","makler","besichtigung","mietwohnung","kaufinteresse"]},
 {id:"LAW_FIRM",p:["rechtsanwalt","kanzlei","anwalt","mandat"]},
 {id:"DENTAL",p:["zahnarzt","zahn","zahnarztpraxis","behandlung","zahnschmerzen"]},
 {id:"FITNESS",p:["fitness","fitnessstudio","mitgliedschaft","probetraining","kurs"]},
 {id:"TAX_ADVISOR",p:["steuerberater","steuerberatung","steuerkanzlei"]},
-{id:"CRAFT",p:["handwerk","handwerker","meisterbetrieb","projektanfrage","elektriker","maler"]}];
+{id:"SHK",p:["sanitär","sanitaer","heizung","heizungsbau","heizungsbauer","heizungstechnik","shk","wärmepumpe","waermepumpe","klima","klimatechnik","bad","badsanierung","wasserinstallation","gasinstallation"]},
+{id:"CRAFT",p:["handwerk","handwerker","meisterbetrieb","projektanfrage","elektriker","maler","installateur","bauunternehmen"]}];
+
 const responses={
-PRICE:()=>state.industry?"Für "+industryLabels[state.industry]+" können Sie mit Cora Basic oder Pro starten: Basic kostet 895 € einmalig + 495 € monatlich, Pro 1.495 € einmalig + 895 € monatlich. Enterprise wird individuell kalkuliert.":"Cora Basic kostet 895 € einmalig + 495 € monatlich. Cora Pro kostet 1.495 € einmalig + 895 € monatlich. Enterprise wird individuell kalkuliert.",
-FEATURES:()=>"Cora kann Website-Besucher informieren, wiederkehrende Fragen beantworten, Leistungen erklären, Anfragen strukturieren und – je nach Setup – Leads erfassen und qualifizieren.",
-LEAD:()=>"Ja. Cora kann Besucher durch relevante Fragen führen und – abhängig vom vereinbarten Setup – Kontaktdaten und Anliegen strukturiert aufnehmen.",
-SETUP:()=>"Bei der Einrichtung werden Unternehmenswissen, Tonalität, Gesprächsführung und der gewünschte Lead-Prozess auf den konkreten Einsatzfall abgestimmt. Die technische Einbindung wird an die bestehende Website angepasst.",
-HOW_IT_WORKS:()=>"Cora sitzt als Webassistent auf Ihrer Website. Ein Besucher stellt eine Frage, Cora ordnet das Anliegen ein, antwortet mit dem hinterlegten Unternehmenswissen und kann bei Bedarf Informationen für eine Anfrage erfassen.",
-PRIVACY:()=>"Die Datenschutzbewertung hängt vom konkreten Einsatzfall, den verarbeiteten Daten, eingesetzten Anbietern, Speicherorten und der technischen Integration ab. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale Rechtsgarantie wäre nicht seriös.",
-INTEGRATIONS:()=>"Integrationen können je nach Setup CRM-, Formular-, Kalender- oder Automatisierungsprozesse betreffen. Welche Schnittstelle sinnvoll ist, hängt vom bestehenden System ab. Nicht jede Integration ist in dieser Demo bereits aktiv.",
-DEMO:()=>"Sie befinden sich bereits in der Cora-Demo. Testen Sie zum Beispiel „Was kostet Cora?“, „Kann Cora Leads erfassen?“, „Ich habe ein Autohaus“ oder „Wie wird Cora eingerichtet?“",
-PURCHASE:()=>"Gerne. Der nächste sinnvolle Schritt ist eine Anfrage mit Unternehmen, Website, Branche und gewünschtem Einsatz. Danach kann Ace AI Agents das passende Cora-Setup prüfen.",
-CONTACT:()=>"Sie können über das Anfrageformular auf dieser Seite Kontakt aufnehmen. Wenn Sie vorher Branche und Anwendungsfall nennen, kann die Anfrage gezielter vorbereitet werden.",
-INDUSTRIES:()=>"Cora kann besonders für Mittelstand und Dienstleister, Handwerk, Hotels, Restaurants, Immobilien, Beratung und weitere Unternehmen mit wiederkehrenden Website-Fragen interessant sein.",
-RESTAURANT:()=>"Für Restaurants kann Cora Fragen zu Öffnungszeiten, Angebot, Standort und Reservierungsanfragen abfangen. Tatsächliche Reservierungen hängen von der jeweiligen Integration ab.",
-HOTEL:()=>"Für Hotels kann Cora Fragen zu Zimmern, Ausstattung, Lage, Anreise, Frühstück und Buchungsanfragen beantworten. Eine tatsächliche Buchung hängt von der jeweiligen Integration ab.",
-AUTOHAUS:()=>"Für Autohäuser kann Cora Fahrzeug- und Servicefragen beantworten, Probefahrt- oder Werkstattanfragen strukturieren und Rückrufwünsche erfassen.",
-REAL_ESTATE:()=>"Für Immobilienunternehmen kann Cora Interessenten zu Objekten informieren und Suchprofil, Budget oder Besichtigungswunsch strukturiert aufnehmen.",
-LAW_FIRM:()=>"Für Kanzleien kann Cora allgemeine Informationen zu Fachgebieten, Kontakt und Erstgespräch bereitstellen. Individuelle Rechtsberatung sollte Cora nicht vortäuschen.",
-DENTAL:()=>"Für Zahnarztpraxen kann Cora Praxisinformationen, Leistungen und Terminwünsche abfangen. Medizinische Diagnosen sollte Cora nicht vortäuschen.",
-FITNESS:()=>"Für Fitnessstudios kann Cora Fragen zu Mitgliedschaft, Kursen, Öffnungszeiten und Probetraining beantworten und Interessenten strukturiert aufnehmen.",
-TAX_ADVISOR:()=>"Für Steuerberatungen kann Cora Leistungen erklären, allgemeine Erstinformationen geben und Anfragen oder Terminwünsche strukturieren. Individuelle Steuerberatung sollte Cora nicht ersetzen.",
-CRAFT:()=>"Für Handwerksbetriebe kann Cora Leistungen erklären und Projektanfragen mit Angaben wie Projektart, Kontaktdaten und Rückrufwunsch strukturiert aufnehmen."
+PRICE:()=>{if(state.industry==="SHK")return "Für Ihren SHK-/Heizungsbetrieb stehen aktuell Cora Basic und Pro zur Verfügung: Basic kostet 895 € einmalig + 495 € monatlich, Pro 1.495 € einmalig + 895 € monatlich. Enterprise wird individuell kalkuliert. Die passende Variante hängt vor allem davon ab, wie umfangreich Ihre Website, Lead-Erfassung und gewünschten Prozesse sind.";return "Cora Basic kostet 895 € einmalig + 495 € monatlich. Cora Pro kostet 1.495 € einmalig + 895 € monatlich. Enterprise wird individuell kalkuliert."},
+FEATURES:()=> "Cora kann Website-Besucher rund um die Uhr zu Ihren Leistungen informieren, wiederkehrende Fragen beantworten, Anliegen einordnen und qualifizierte Anfragen vorbereiten. Je nach Setup kann sie Kontaktdaten und Projektdetails strukturiert erfassen und an Ihren gewünschten Prozess weitergeben.",
+LEAD:()=> "Ja. Cora kann aus einem allgemeinen Website-Besucher Schritt für Schritt eine strukturierte Anfrage machen – zum Beispiel mit Name, Kontakt, Anliegen, gewünschter Leistung, Terminwunsch und weiteren für Ihr Unternehmen relevanten Angaben. Welche Felder abgefragt werden, wird individuell festgelegt.",
+SETUP:()=> "Beim Setup wird Cora auf Ihr Unternehmen zugeschnitten: Unternehmenswissen, Leistungen, FAQ, Tonalität, Gesprächslogik, Lead-Felder und gewünschte Weiterleitungen werden definiert. Anschließend wird der Assistent in Ihre bestehende Website eingebunden.",
+HOW_IT_WORKS:()=> "Cora verbindet Wissensvermittlung und Lead-Erfassung: Ein Besucher stellt eine Frage, Cora erkennt das Anliegen, antwortet mit den hinterlegten Informationen und kann bei erkennbarem Interesse gezielt zur nächsten sinnvollen Frage führen – statt jedem Besucher dasselbe Formular vorzusetzen.",
+PRIVACY:()=> "Die Datenschutzbewertung hängt vom konkreten Einsatzfall, den verarbeiteten Daten, eingesetzten Anbietern, Speicherorten und der technischen Integration ab. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale DSGVO-Rechtsgarantie wäre nicht seriös.",
+INTEGRATIONS:()=> "Cora kann je nach Projekt mit Formularen, CRM-Systemen, Kalendern oder Automatisierungsprozessen verbunden werden. Welche Integration sinnvoll ist, hängt von Ihrer vorhandenen Infrastruktur ab. Diese Demo selbst simuliert keine nicht vorhandenen Schnittstellen.",
+DEMO:()=> "Sie können sich hier frei austoben. Fragen Sie mich zum Beispiel nach Preisen, Funktionen, Einrichtung, Datenschutz oder einer konkreten Branche. Sie können auch einen eigenen Anwendungsfall beschreiben – etwa „Wir sind ein SHK-Betrieb und bekommen viele Anfragen zu Wärmepumpen“.",
+PURCHASE:()=> "Gerne. Für ein konkretes Angebot sind Unternehmen, Website, Branche und gewünschter Einsatz hilfreich. Wenn Sie mir Ihren Anwendungsfall beschreiben, kann ich zuerst zeigen, wie Cora dafür eingesetzt werden könnte.",
+CONTACT:()=> "Sie können das Anfrageformular auf dieser Seite nutzen. Wenn Sie mir vorher Branche und Anwendungsfall nennen, kann Cora die Anfrage bereits inhaltlich vorbereiten.",
+INDUSTRIES:()=> "Cora ist besonders für Unternehmen interessant, bei denen Website-Besucher häufig dieselben Fragen stellen oder Leistungen erklärungsbedürftig sind – darunter Mittelstand, Handwerk, SHK, Hotels, Restaurants, Immobilien, Autohäuser, Kanzleien, Praxen, Fitness und Beratung.",
+RESTAURANT:()=> "Für ein Restaurant kann Cora beispielsweise Öffnungszeiten, Speisekarte, Standort und häufige Fragen beantworten, Reservierungswünsche aufnehmen und bei Interesse Kontaktdaten bzw. gewünschte Zeit oder Personenzahl erfassen. Eine echte Reservierung hängt vom angebundenen System ab.",
+HOTEL:()=> "Für ein Hotel kann Cora Fragen zu Zimmern, Ausstattung, Lage, Anreise, Frühstück und Buchungsanfragen beantworten. Bei Interesse kann sie beispielsweise Reisedaten und Kontaktdaten strukturiert aufnehmen. Eine tatsächliche Buchung benötigt die entsprechende Integration.",
+AUTOHAUS:()=> "Für ein Autohaus kann Cora Fahrzeug-, Service- und Werkstattfragen beantworten, Probefahrt- oder Rückrufwünsche aufnehmen und Interessenten nach Fahrzeug, Anliegen und Kontaktdaten fragen.",
+REAL_ESTATE:()=> "Für Immobilienunternehmen kann Cora Objektfragen beantworten und Interessenten beispielsweise nach Kauf oder Miete, Budget, Suchprofil und Besichtigungswunsch fragen.",
+LAW_FIRM:()=> "Für Kanzleien kann Cora allgemeine Informationen zu Fachgebieten, Kontakt und Erstgespräch geben und Anfragen strukturiert aufnehmen. Individuelle Rechtsberatung sollte sie nicht vortäuschen.",
+DENTAL:()=> "Für Zahnarztpraxen kann Cora Praxisinformationen und Leistungen erklären und Terminwünsche strukturiert aufnehmen. Medizinische Diagnosen oder individuelle Behandlungsempfehlungen sollte sie nicht vortäuschen.",
+FITNESS:()=> "Für Fitnessstudios kann Cora Mitgliedschaft, Kurse, Öffnungszeiten und Probetraining erklären und Interessenten strukturiert aufnehmen.",
+TAX_ADVISOR:()=> "Für Steuerberatungen kann Cora Leistungen erklären, allgemeine Erstinformationen geben und Termin- oder Kontaktanfragen strukturieren. Individuelle Steuerberatung sollte sie nicht ersetzen.",
+SHK:()=> "Für einen Sanitär-/Heizungsbetrieb kann Cora besonders wertvoll sein, weil viele Website-Anfragen wiederkehrende Muster haben. Sie kann zum Beispiel Fragen zu Heizungsmodernisierung, Wärmepumpe, Sanitärarbeiten, Badsanierung, Wartung, Reparaturen, Klima- oder Wasserinstallationen beantworten. Bei einem konkreten Projekt kann sie den Interessenten Schritt für Schritt vorqualifizieren – etwa: Welche Leistung wird benötigt? Geht es um Neubau, Modernisierung oder Reparatur? Um welche Immobilie handelt es sich? Wo befindet sich das Objekt? Wie dringend ist die Anfrage? Wie kann der Betrieb zurückrufen? Daraus kann eine deutlich strukturiertere Anfrage entstehen, als nur Name und Telefonnummer einzusammeln.",
+CRAFT:()=> "Für Handwerksbetriebe kann Cora Leistungen erklären, Einsatzgebiete abfragen und Projektanfragen strukturiert aufnehmen – beispielsweise Art des Projekts, Objekt, gewünschte Leistung, Zeitraum, Kontaktdaten und Rückrufwunsch."
 };
-function detectIntent(q){const text=q.toLowerCase();const scored=intents.map(i=>({id:i.id,score:i.p.reduce((n,k)=>n+(text.includes(k.toLowerCase())?(k.includes(" ")?3:1):0),0)})).sort((a,b)=>b.score-a.score);return scored[0]?.score>0?scored[0].id:"UNKNOWN";}
-function updateContext(q,intent){if(industryLabels[intent])state.industry=intent;state.lastIntent=intent;}
-function getAnswer(q){const intent=detectIntent(q);updateContext(q,intent);if(intent==="UNKNOWN")return "Damit ich gezielt antworte: Geht es um Funktionen, Preise, Einrichtung, Datenschutz, eine bestimmte Branche oder darum, Cora für Ihr Unternehmen einzusetzen?";return responses[intent]?responses[intent]():responses.FEATURES();})();
+
+function detectIntent(q){
+ const text=q.toLowerCase();
+ const scored=intents.map(i=>({id:i.id,score:i.p.reduce((n,k)=>n+(text.includes(k.toLowerCase())?(k.includes(" ")?3:1):0),0)})).sort((a,b)=>b.score-a.score);
+ return scored[0]?.score>0?scored[0].id:"UNKNOWN";
+}
+function extractProfile(q){
+ const t=q.toLowerCase();
+ if(/sanitär|sanitaer|heizung|heizungsbau|heizungsbauer|heizungstechnik|shk|wärmepumpe|waermepumpe/.test(t))state.industry="SHK";
+ if(/restaurant|gastronomie/.test(t))state.industry="RESTAURANT";
+ if(/hotel/.test(t))state.industry="HOTEL";
+ if(/autohaus|autohändler/.test(t))state.industry="AUTOHAUS";
+ if(/immobilien|makler/.test(t))state.industry="REAL_ESTATE";
+ if(/kanzlei|rechtsanwalt|anwalt/.test(t))state.industry="LAW_FIRM";
+ if(/zahnarzt|zahnarztpraxis/.test(t))state.industry="DENTAL";
+ if(/fitnessstudio|fitness/.test(t))state.industry="FITNESS";
+ if(/steuerberater|steuerkanzlei/.test(t))state.industry="TAX_ADVISOR";
+ if(/handwerk|handwerker|meisterbetrieb|elektriker|maler/.test(t)&&!state.industry)state.industry="CRAFT";
+ if(/wärmepumpe|waermepumpe/.test(t))state.profile.needs.push("Wärmepumpe");
+ if(/badsanierung|bad/.test(t))state.profile.needs.push("Badsanierung");
+ if(/wartung|wartungsanfrage/.test(t))state.profile.needs.push("Wartung");
+ if(/reparatur|störung|stoerung|defekt/.test(t))state.profile.needs.push("Reparatur");
+}
+function updateContext(q,intent){extractProfile(q);state.lastIntent=intent;state.turns++;}
+function getAnswer(q){
+ const intent=detectIntent(q);updateContext(q,intent);
+ if(intent==="PRICE"||intent==="FEATURES"||intent==="LEAD"||intent==="SETUP"||intent==="HOW_IT_WORKS"||intent==="PRIVACY"||intent==="INTEGRATIONS"||intent==="DEMO"||intent==="PURCHASE"||intent==="CONTACT"||intent==="INDUSTRIES")return responses[intent]();
+ if(industryLabels[intent]){state.industry=intent;return responses[intent]();}
+ if(state.industry==="SHK")return responses.SHK();
+ if(state.industry)return responses[state.industry]();
+ return "Erzählen Sie mir kurz, was Ihr Unternehmen macht und welche Anfragen Sie über die Website erhalten. Dann kann ich Ihnen konkret zeigen, wie Cora eingesetzt werden könnte.";
+}
+
+;
