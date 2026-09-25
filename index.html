@@ -121,4 +121,30 @@
 
 <footer><div class="footer-main"><div><a class="brand" href="#top"><span class="brand-mark">✦</span><span>Cora <b>AI</b></span></a><p>ACE AI AGENTS<br>KI-Webagenten für moderne Kundenkommunikation.</p></div><div class="footer-links"><div><b>Produkt</b><a href="#produkt">Funktionen</a><a href="#branchen">Branchen</a><a href="#preise">Preise</a></div><div><b>Unternehmen</b><a href="#faq">FAQ</a><a href="#kontakt">Kontakt</a><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a></div></div></div><div class="footer-bottom"><span>© 2026 ACE AI AGENTS · Emre Akyıldız</span><span><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></span></div></footer>
 <script src="app.js?v=20260925-8"></script>
+<script>
+(() => {
+  const input=document.getElementById("demoInput");
+  const send=document.getElementById("demoSend");
+  const messages=document.getElementById("demoMessages");
+  if(!input||!send||!messages||typeof window.coraSubmitDemoQuestion==="function") return;
+  const fallback=()=>{
+    const value=input.value.trim();
+    if(!value)return;
+    const user=document.createElement("div");
+    user.className="msg user";
+    user.textContent=value;
+    messages.appendChild(user);
+    input.value="";
+    const answer=document.createElement("div");
+    answer.className="msg cora";
+    answer.textContent="Danke für Ihre Frage. Cora kann Website-Besucher informieren, Anliegen erkennen und – je nach Einsatz – qualifizierte Anfragen erfassen. Beschreiben Sie kurz Ihre Branche oder Ihr konkretes Ziel, dann kann ich den passenden Ablauf zeigen.";
+    messages.appendChild(answer);
+    messages.scrollTop=messages.scrollHeight;
+    input.focus({preventScroll:true});
+  };
+  window.coraSubmitDemoQuestion=fallback;
+  send.addEventListener("click",fallback);
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();fallback();}});
+})();
+</script>
 </body></html>
