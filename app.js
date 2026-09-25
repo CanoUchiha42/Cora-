@@ -60,7 +60,7 @@ function detectIndustry(text){
  const raw=String(text||"").trim(),t=normalize(raw);
  const industry=detectIndustry(raw);
  if(industry)state.industry=industry;
- if(/qualifizierte kundenkontakte|qualifizierte kunden|qualifizierte leads|qualifizierten kunden|kundenkontakte|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|anfragen gewinnen|leads sammeln|leadgenerierung|lead generieren/.test(t))state.profile.goal="mehr qualifizierte Kundenkontakte";
+ if(/qualifizierte kundenkontakte|qualifizierte kunden|qualifizierte leads|qualifizierten kunden|kundenkontakte|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|mehr lead|anfragen gewinnen|leads sammeln|lead sammeln|lead sammlen|leadgenerierung|lead generieren/.test(t))state.profile.goal="mehr qualifizierte Kundenkontakte";
  if(/geschaeftsfuehrer|geschaeftsfuhrer|inhaber|chef|einkauf|einkaeufer|vertrieb|sales|marketing/.test(t))state.profile.role=raw;
  if(/händler|haendler|wiederverkaeufer|wiederverkäufer|reseller|grosshaendler/.test(t))state.profile.customerType=raw;
  if(/angebot|bestellung|bestellen|kaufen|einkauf|bedarf|lieferung|kondition|preis/.test(t))state.profile.intent=raw;
@@ -82,7 +82,7 @@ function directAnswer(text){
  const t=normalize(text);
  if(/was kann cora|was macht cora|wie hilft cora|wofuer|wofür|wie generiert cora|wie bekommt cora|wie sammelt cora/.test(t))
    return "Cora arbeitet im Kern wie ein digitaler Erstkontakt im Vertrieb: **1. Besucherfrage beantworten → 2. Anliegen erkennen → 3. Bedarf konkretisieren → 4. passende Rückfragen stellen → 5. qualifizierte Anfrage an den nächsten Kontaktpunkt übergeben.** Dabei soll Cora keine langen Fragebögen abarbeiten, sondern nur Informationen erfassen, die für den jeweiligen Vertriebsprozess relevant sind.";
- if(/lead erfassen|leads erfassen|kundenkontakte erfassen|kontakt erfassen|lead sammeln|leads sammeln/.test(t))
+ if(/lead erfassen|leads erfassen|kundenkontakte erfassen|kontakt erfassen|lead sammeln|lead sammlen|leads sammeln/.test(t))
    return "Ja. Cora kann einen Website-Besucher nicht nur nach Name und E-Mail fragen, sondern den geschäftlichen Kontext davor erfassen: Was wird gesucht, für welchen Zweck, mit welcher Dringlichkeit und welcher gewünschte nächste Schritt? Dadurch erhält der Vertrieb eine Anfrage mit Kontext statt nur einen Kontaktdatensatz.";
  if(/einrichtung|integration|einbinden|crm|kalender|api|n8n/.test(t))
    return "Die Einrichtung wird auf den tatsächlichen Vertriebsprozess zugeschnitten: Wissen, Zielgruppen, Gesprächswege, Qualifikationskriterien, Übergabe und Kontaktziel. Je nach Projekt können anschließend CRM, E-Mail, Kalender oder Automatisierungen angebunden werden.";
@@ -155,7 +155,7 @@ function startQualification(){
   return "Was möchten Sie über Ihre Website erreichen – mehr qualifizierte Kundenkontakte, mehr Termine, mehr Angebotsanfragen oder etwas anderes? Und in welcher Branche sind Sie tätig?";
  }
  const data=industryData[state.industry];
- if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)) return startQualification();
+ if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr lead|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)) return startQualification();
  if(/welches paket|welcher tarif|basic|pro|enterprise|was passt|geeignet|empfehl/.test(t)){
   if(/wie hilft|was kann|mehrwert|nutzen|einsatz|mehr kunden|mehr anfragen|mehr termine/.test(t))return startQualification();
   return packageForIndustry()+"\\n\\nBasic ist sinnvoll, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Pro ist der naheliegende Ausgangspunkt, wenn Cora aktiv Bedarf ermitteln und Leads qualifizieren soll. Enterprise prüfen wir bei komplexeren individuellen Anforderungen.\\n\\nDamit ich es für Ihren Betrieb konkret einordne: "+data.questions[0];
