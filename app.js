@@ -39,39 +39,36 @@ function normalize(value){return String(value||"").toLowerCase().replace(/ä/g,"
 function detectIndustry(text){
  const t=normalize(text);
  const patterns={
-  WHOLESALE_MOBILE:["grosshandel mobilfunk","mobilfunk grosshandel","grosshandel fuer mobilfunk","grosshandel fuer mobilfunk und zubehoer","grosshandel mobilfunk und zubehoer","mobilfunk grosshandel und zubehoer","mobilfunk und zubehoer grosshandel","mobilfunk zubehoer grosshandel","telekommunikationsgrosshandel","telekommunikation grosshandel","telekommunikations grosshandel","gross und aussenhandel mobilfunk","gross und aussenhandel fuer mobilfunk","grosshandel und aussenhandel mobilfunk","grosshandel und aussenhandel fuer mobilfunk","grosshandel mobilfunk zubehoer","grosshaendler mobilfunk","mobilfunk grosshaendler","mobilfunk grosshandel zubehoer","mobilfunk grosshandel","monilfunk grosshandel","monilfunk","mobilfunk","telekommunikation grosshandel","telekommunikationshandel","handy grosshandel","smartphone grosshandel"],
-  BEAUTY:["kosmetiksalon","kosmetiksaloon","kosmetiksalons","kosmetik salon","kosmetikstudio","kosmetik studio","beautysalon","beauty salon","nagelstudio","nagel salon","friseursalon","friseur","friseurbetrieb","barbershop","barber","wimpernstudio","wimpern","gesichtsbehandlung","haarentfernung","aesthetik"],
-  FITNESS:["fitnessstudio","fitness studio","fitnesscenter","fitness center","fitnessclub","fitness club","fitness","probetraining","mitgliedschaft","personal training","crossfit","yoga studio","yogastudio"],
-  SHK:["heizung","heizungsbau","heizungsbauer","heizungsbetrieb","waermepumpe","waermepumpen","sanitaer","sanitaerbetrieb","sanitaerinstallateur","shk","shk betrieb","shkbetrieb","badsanierung","badinstallation","klima","klimaanlage","kaelteanlagen","wasserinstallation"],
-  RESTAURANT:["restaurant","gastronomie","gaststaette","gasthaus","imbiss","cafe","café","bistro","bar","reservierung","speisekarte","tisch reservieren","catering"],
-  HOTEL:["hotel","hotelbetrieb","gasthof","pension","ferienhotel","zimmer buchen","check in","check-in","fruehstueck","uebernachtung","beherbergung"],
-  AUTOHAUS:["autohaus","autohandel","autohändler","autoverkauf","fahrzeughandel","fahrzeughaendler","kfz handel","kfzbetrieb","kfz betrieb","fahrzeug","probefahrt","leasing","werkstatt","autowerkstatt","gebrauchtwagen"],
-  REAL_ESTATE:["immobilien","immobilie","immobilienmakler","immobilienunternehmen","immobilienagentur","makler","maklerbuero","hausverwaltung","property management","besichtigung","mietwohnung","wohnimmobilien","gewerbeimmobilien"],
-  LAW_FIRM:["kanzlei","rechtsanwalt","rechtsanwaelte","anwalt","anwaltskanzlei","rechtsberatung","rechtsanwaltskanzlei","law firm"],
-  DENTAL:["zahnarzt","zahnarztpraxis","zahnmedizin","zahnarztzentrum","zahnklinik","zahnbehandlung","zahnarztpraxis"],
-  TAX_ADVISOR:["steuerberater","steuerberatung","steuerkanzlei","steuerberaterkanzlei","steuerbuero","steuerbuero","tax advisor","buchhaltungsbuero"],
-  CRAFT:["handwerksbetrieb","handwerker","handwerksunternehmen","meisterbetrieb","elektriker","elektrobetrieb","elektroinstallation","maler","malerbetrieb","bauunternehmen","bauunternehmer","dachdecker","dachdeckerbetrieb","tischler","schreiner","metallbauer","sanitaerinstallateur"]
+  WHOLESALE_MOBILE:["grosshandel mobilfunk","mobilfunk grosshandel","grosshandel fuer mobilfunk","grosshandel fuer mobilfunk und zubehoer","grosshandel mobilfunk und zubehoer","mobilfunk grosshandel und zubehoer","mobilfunk und zubehoer grosshandel","mobilfunk zubehoer grosshandel","telekommunikationsgrosshandel","telekommunikation grosshandel","telekommunikations grosshandel","gross und aussenhandel mobilfunk","gross und aussenhandel fuer mobilfunk","grosshandel und aussenhandel mobilfunk","grosshandel und aussenhandel fuer mobilfunk","grosshaendler mobilfunk","mobilfunk grosshaendler","handy grosshandel","smartphone grosshandel","monilfunk","mobilfunk grosshandel"],
+  BEAUTY:["kosmetiksalon","kosmetikstudio","beautysalon","beauty salon","nagelstudio","friseursalon","friseur","barbershop","wimpernstudio","wimpern","gesichtsbehandlung","haarentfernung","aesthetik"],
+  FITNESS:["fitnessstudio","fitnesscenter","fitnessclub","fitness","probetraining","mitgliedschaft","personal training","crossfit","yogastudio"],
+  SHK:["heizung","heizungsbau","heizungsbauer","heizungsbetrieb","waermepumpe","sanitaer","sanitaerbetrieb","sanitaerinstallateur","shk","badsanierung","badinstallation","klima","klimaanlage","wasserinstallation"],
+  RESTAURANT:["restaurant","gastronomie","gaststaette","gasthaus","imbiss","cafe","bistro","reservierung","speisekarte","tisch reservieren","catering"],
+  HOTEL:["hotel","hotelbetrieb","gasthof","pension","ferienhotel","zimmer buchen","check in","fruehstueck","uebernachtung","beherbergung"],
+  AUTOHAUS:["autohaus","autohandel","autoverkauf","fahrzeughandel","fahrzeughaendler","kfz handel","kfz betrieb","fahrzeug","probefahrt","leasing","autowerkstatt","gebrauchtwagen"],
+  REAL_ESTATE:["immobilien","immobilie","immobilienmakler","immobilienunternehmen","immobilienagentur","makler","hausverwaltung","besichtigung","mietwohnung","wohnimmobilien","gewerbeimmobilien"],
+  LAW_FIRM:["kanzlei","rechtsanwalt","anwalt","anwaltskanzlei","rechtsberatung","rechtsanwaltskanzlei"],
+  DENTAL:["zahnarzt","zahnarztpraxis","zahnmedizin","zahnarztzentrum","zahnklinik","zahnbehandlung"],
+  TAX_ADVISOR:["steuerberater","steuerberatung","steuerkanzlei","steuerberaterkanzlei","steuerbuero","buchhaltungsbuero"],
+  CRAFT:["handwerksbetrieb","handwerker","handwerksunternehmen","meisterbetrieb","elektriker","elektrobetrieb","maler","bauunternehmen","dachdecker","tischler","schreiner","metallbauer"]
  };
- for(const [id,words] of Object.entries(patterns)){
-   if(words.some(w=>t.includes(normalize(w))))return id;
- }
- if(/gross|aussenhandel|grosshandel|grosshaendler|grosshandel/.test(t)&&/mobilfunk|monilfunk|telekommunikation|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
- if(/mobilfunk|monilfunk|telekommunikation/.test(t)&&/gross|handel|haendler|verkaeufer|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
+ for(const [id,words] of Object.entries(patterns)){if(words.some(w=>t.includes(normalize(w))))return id;}
+ if(/gross|aussenhandel|grosshandel|grosshaendler/.test(t)&&/mobilfunk|monilfunk|telekommunikation|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
+ if(/mobilfunk|monilfunk|telekommunikation/.test(t)&&/handel|haendler|gross|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
  return null;
-}
-
-function remember(text){
- const t=normalize(text);
- const industry=detectIndustry(text);
+}\n\nfunction remember(text){
+ const raw=String(text||"").trim(),t=normalize(raw);
+ const industry=detectIndustry(raw);
  if(industry)state.industry=industry;
- if(/qualifizierte kundenkontakte|qualifizierte kunden|qualifizierte leads|qualifizierten kunden|kundenkontakte|kunden kontakt|kundenkontakte gewinnen|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|anfragen gewinnen/.test(t))state.profile.goal="mehr qualifizierte Kundenkontakte";
- if(/gesichtsbehandlung|haarentfernung|naegel|wimpern|aesthetik|haut/.test(t))state.profile.service=text;
+ if(/qualifizierte kundenkontakte|qualifizierte kunden|qualifizierte leads|qualifizierten kunden|kundenkontakte|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|anfragen gewinnen|leads sammeln|leadgenerierung|lead generieren/.test(t))state.profile.goal="mehr qualifizierte Kundenkontakte";
+ if(/geschaeftsfuehrer|geschaeftsfuhrer|inhaber|chef|einkauf|einkaeufer|vertrieb|sales|marketing/.test(t))state.profile.role=raw;
+ if(/händler|haendler|wiederverkaeufer|wiederverkäufer|reseller|grosshaendler/.test(t))state.profile.customerType=raw;
+ if(/angebot|bestellung|bestellen|kaufen|einkauf|bedarf|lieferung|kondition|preis/.test(t))state.profile.intent=raw;
+ if(/heute|sofort|diese woche|diesen monat|dringend|bald|naechste woche/.test(t))state.profile.timing=raw;
  if(/termin/.test(t))state.profile.contactIntent="Termin";
  if(/beratung/.test(t))state.profile.contactIntent="Beratung";
- state.profile.answers.push(String(text).trim());
-}
-
-function knownGoalText(){return state.profile.goal?"Ihr Ziel habe ich bereits erfasst: "+state.profile.goal+".":"";}
+ state.profile.answers.push(raw);
+}\n\nfunction knownGoalText(){return state.profile.goal?"Ihr Ziel habe ich bereits erfasst: "+state.profile.goal+".":"";}
 
 function responseForKnownGoal(){
  const data=industryData[state.industry];
@@ -83,13 +80,14 @@ function responseForKnownGoal(){
 
 function directAnswer(text){
  const t=normalize(text);
- if(/was kann cora|was macht cora|wie hilft cora|wofuer|wofür/.test(t))return "Cora ist nicht nur ein FAQ-Chat. Sie kann Besucherfragen beantworten, auf das konkrete Anliegen eingehen, passende Rückfragen stellen und bei echtem Interesse eine strukturierte Anfrage vorbereiten. So entsteht aus einem Website-Besuch ein Gespräch mit verwertbarem Kontext.";
- if(/lead erfassen|leads erfassen|kundenkontakte erfassen|kontakt erfassen/.test(t))return "Ja. Cora kann Kontaktdaten mit dem konkreten Anliegen verbinden. Statt nur Name und Telefonnummer zu sammeln, kann der Dialog vorher klären, wonach der Besucher sucht, welche Leistung relevant ist und welcher nächste Schritt gewünscht wird. Welche Angaben sinnvoll sind, hängt vom jeweiligen Unternehmen ab.";
- if(/einrichtung|integration|einbinden/.test(t))return "Die Einrichtung beginnt mit Ihrem Anwendungsfall: Unternehmenswissen und gewünschte Gesprächswege werden definiert, anschließend wird Cora in die Website eingebunden und mit realistischen Fragen getestet. Erst danach wird der produktive Ablauf festgelegt.";
+ if(/was kann cora|was macht cora|wie hilft cora|wofuer|wofür|wie generiert cora|wie bekommt cora|wie sammelt cora/.test(t))
+   return "Cora arbeitet im Kern wie ein digitaler Erstkontakt im Vertrieb: **1. Besucherfrage beantworten → 2. Anliegen erkennen → 3. Bedarf konkretisieren → 4. passende Rückfragen stellen → 5. qualifizierte Anfrage an den nächsten Kontaktpunkt übergeben.** Dabei soll Cora keine langen Fragebögen abarbeiten, sondern nur Informationen erfassen, die für den jeweiligen Vertriebsprozess relevant sind.";
+ if(/lead erfassen|leads erfassen|kundenkontakte erfassen|kontakt erfassen|lead sammeln|leads sammeln/.test(t))
+   return "Ja. Cora kann einen Website-Besucher nicht nur nach Name und E-Mail fragen, sondern den geschäftlichen Kontext davor erfassen: Was wird gesucht, für welchen Zweck, mit welcher Dringlichkeit und welcher gewünschte nächste Schritt? Dadurch erhält der Vertrieb eine Anfrage mit Kontext statt nur einen Kontaktdatensatz.";
+ if(/einrichtung|integration|einbinden|crm|kalender|api|n8n/.test(t))
+   return "Die Einrichtung wird auf den tatsächlichen Vertriebsprozess zugeschnitten: Wissen, Zielgruppen, Gesprächswege, Qualifikationskriterien, Übergabe und Kontaktziel. Je nach Projekt können anschließend CRM, E-Mail, Kalender oder Automatisierungen angebunden werden.";
  return null;
-}
-
-function packageForIndustry(){
+}\n\nfunction packageForIndustry(){
  if(["WHOLESALE_MOBILE","BEAUTY","FITNESS","AUTOHAUS","SHK","REAL_ESTATE","CRAFT"].includes(state.industry))return packageGuidance.PRO;
  return packageGuidance.BASIC+" "+packageGuidance.PRO;
 }
@@ -98,45 +96,52 @@ function startQualification(){
  const data=industryData[state.industry];
  if(!data)return null;
  state.stage="qualification";state.conversation.leadMode=true;state.conversation.questionIndex=0;
- return "Für Ihren "+industryLabels[state.industry]+" ist Pro besonders interessant, wenn Cora aktiv aus Besuchern qualifizierte Anfragen entwickeln soll. "+data.intro+
- "\\n\\nKonkrete Einsatzfälle:\\n• "+data.useCases.join("\\n• ")+
- "\\n\\nDer Mehrwert: "+data.value+
- "\\n\\nDamit ich den Einsatz nicht pauschal, sondern anhand Ihres Ziels einordne, starten wir direkt mit der Qualifizierung. "+data.questions[0];
-}
-
-function nextQualification(answer){
- const data=industryData[state.industry],idx=state.conversation.questionIndex;
- if(idx===0)state.profile.service=answer;
- if(idx===1)state.profile.contactIntent=answer;
- if(idx===2)state.profile.need=answer;
- if(idx===3)state.profile.timing=answer;
- state.profile.answers.push(String(answer).trim());
+ const context=state.profile.goal?"Sie möchten "+state.profile.goal+". ":"";
+ return context+"Für einen "+industryLabels[state.industry]+" würde ich nicht einfach mehr Chat-Nachrichten sammeln, sondern den Dialog auf verwertbare Geschäftsanfragen ausrichten. Cora kann zuerst die Frage beantworten, dann erkennen, was der Besucher konkret erreichen möchte, und anschließend nur die Informationen abfragen, die für den nächsten Vertriebsschritt relevant sind."+
+ "\n\nZum Beispiel kann Cora bei Ihnen zwischen Neukunde, Bestandskunde, Händler/Wiederverkäufer, Produktanfrage und konkretem Angebotsbedarf unterscheiden. "+data.intro+
+ "\n\nDamit wir keinen Fragebogen daraus machen, starten wir mit der wichtigsten Information: "+(state.profile.intent||data.questions[0]);
+}\n\nfunction nextQualification(answer){
+ const data=industryData[state.industry],raw=String(answer||"").trim(),t=normalize(raw),idx=state.conversation.questionIndex;
+ state.profile.answers.push(raw);
+ if(idx===0){state.profile.need=raw;if(!state.profile.service)state.profile.service=raw;}
+ if(idx===1)state.profile.customerType=raw;
+ if(idx===2)state.profile.intent=raw;
+ if(idx===3)state.profile.timing=raw;
  state.conversation.questionIndex++;
+
+ // Branch instead of a rigid questionnaire: acknowledge what was learned and ask only the next missing business-critical point.
+ if(state.industry==="WHOLESALE_MOBILE"){
+   if(idx===0){
+     return "Verstanden. Sie suchen also konkret nach: "+raw+". Das ist bereits ein verwertbarer Bedarf.\n\nDer nächste Punkt ist für den Vertrieb wichtiger als allgemeine Kontaktdaten: Geht es dabei um einen konkreten Einkaufs-/Angebotsbedarf oder möchten Sie zunächst Produkte, Marken und Konditionen vergleichen?";
+   }
+   if(idx===1){
+     return "Verstanden. Damit ist auch die Art der Anfrage klarer.\n\nWenn Cora solche Besucher erkennt, sollte sie den nächsten Schritt an der Kaufabsicht ausrichten. Welche Größenordnung ist für Sie ungefähr relevant – einzelne Geräte, kleinere Händlerbestellungen oder größere Stückzahlen?";
+   }
+   if(idx===2){
+     return "Das hilft bei der Einordnung. Cora würde jetzt nicht noch fünf weitere Pflichtfragen stellen, sondern die Anfrage für den Vertrieb verdichten. Wann besteht der Bedarf ungefähr – kurzfristig, in den nächsten Wochen oder eher zur Orientierung?";
+   }
+   if(idx===3){
+     state.conversation.leadMode=false;state.stage="contact";
+     return "Damit haben wir bereits einen verwertbaren B2B-Kontext: Mobilfunk-Großhandel, konkreter Bedarf, Kauf-/Angebotsabsicht und zeitliche Einordnung.\n\nGenau so sollte Cora arbeiten: **erst verstehen, dann qualifizieren, dann Kontakt herstellen**. Die Kontaktdaten werden nicht blind abgefragt, sondern an einen konkreten Geschäftsanlass gebunden.\n\nWenn Sie Cora für Ihren Vertrieb einsetzen möchten, können Sie jetzt eine Cora-Anfrage starten. Im persönlichen Gespräch werden Datenfelder, CRM-/E-Mail-Übergabe und der genaue Gesprächsprozess auf Ihren Betrieb abgestimmt.";
+   }
+ }
+
  if(state.conversation.questionIndex<data.questions.length){
-  return "Danke. Das macht den Einsatz konkreter. "+data.questions[state.conversation.questionIndex]+
-  "\\n\\nWarum ich das frage: Die Antwort hilft Cora, die Anfrage später mit echtem Kontext statt nur mit Kontaktdaten zu übergeben.";
+   return "Danke. Ich habe das berücksichtigt. "+data.questions[state.conversation.questionIndex]+"\n\nIch frage das nur, weil die Antwort bestimmt, wie Cora die Anfrage an Ihr Team weitergibt.";
  }
  state.conversation.leadMode=false;state.stage="contact";
- return "Damit ist aus dem allgemeinen Wunsch bereits eine konkrete Anfrage geworden.\\n\\nCora hat bisher erkannt:\\n• Branche: "+industryLabels[state.industry]+
- "\\n• Ziel: "+(state.profile.goal||"Kunden-/Anfragengewinnung")+
- "\\n• Interesse/Leistung: "+(state.profile.service||"erfasst")+
- "\\n• Bedarf: "+(state.profile.need||"erfasst")+
- "\\n• Zeitraum: "+(state.profile.timing||"erfasst")+
- "\\n\\nGenau darin liegt der praktische Mehrwert: Der Besucher wurde nicht einfach auf ein Kontaktformular verwiesen. Cora hat das Anliegen aufgenommen, passende Rückfragen gestellt und den nächsten Schritt vorbereitet. Ihr Team kann dadurch mit mehr Kontext in die Anfrage einsteigen.\\n\\nWenn Sie Cora für Ihren Betrieb einsetzen möchten, starten Sie jetzt die „Cora-Anfrage“. Dort können Sie Unternehmen, E-Mail, Website und weitere Kontaktdaten hinterlassen. Im persönlichen Gespräch wird der tatsächliche Umfang und das passende Paket festgelegt.";
-}
-
-function answer(text){
+ return "Damit ist aus dem allgemeinen Website-Interesse eine strukturierte Anfrage geworden.\n\nCora hat die relevanten Angaben aus dem Gespräch übernommen, statt dieselben Informationen erneut abzufragen. Der nächste Schritt ist die Übergabe an den Vertrieb bzw. an das gewünschte Kontaktziel.";
+}\n\nfunction answer(text){
  state.turns++;remember(text);
  const t=normalize(text);
  const direct=directAnswer(text);
  if(direct && !state.conversation.leadMode)return direct;
  if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
  if(!state.industry){
-  if(/sag.*anders|was anderes|andere antwort|weiter|naechste|nächste|konkret/.test(t) && state.profile.goal){
-   return "Ja. Wir können die Paketfrage zunächst zurückstellen. Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte.\\n\\nCora kann dafür Besucher im Gespräch von der ersten Frage bis zu einer strukturierten Anfrage begleiten – Informationen geben, Bedarf erkennen und erst bei konkretem Interesse relevante Kontaktdaten erfassen.\\n\\nWenn Sie möchten, testen wir das direkt an Ihrem Unternehmen. Nennen Sie mir nur Ihre Branche, dann spiele ich einen realistischen Gesprächsablauf für Ihren Anwendungsfall durch.";
+  if(state.profile.goal){
+   return "Ich habe Ihr Ziel bereits verstanden: mehr qualifizierte Kundenkontakte. Ich brauche dafür nicht dieselbe Angabe noch einmal.\n\nWelche Branche bzw. welches konkrete Geschäftsmodell soll Cora auf Ihrer Website unterstützen? Ein kurzer Begriff reicht, z. B. Mobilfunk-Großhandel, Autohaus, Kanzlei, Fitnessstudio oder Handwerksbetrieb.";
   }
-  if(state.profile.goal)return responseForKnownGoal();
-  return "Damit ich Ihnen nicht pauschal ein Paket nenne: Welche Branche betreiben Sie und was möchten Sie über Ihre Website erreichen – zum Beispiel mehr Termine, mehr Angebotsanfragen oder mehr qualifizierte Kundenkontakte?";
+  return "Was möchten Sie über Ihre Website erreichen – mehr qualifizierte Kundenkontakte, mehr Termine, mehr Angebotsanfragen oder etwas anderes? Und in welcher Branche sind Sie tätig?";
  }
  const data=industryData[state.industry];
  if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)) return startQualification();
