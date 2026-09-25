@@ -40,6 +40,17 @@ const intents=[
  {id:"CRAFT",p:["handwerk","handwerker","meisterbetrieb","projektanfrage","elektriker","maler","installateur","bauunternehmen"]}
 ];
 
+const packageGuidance={
+ BASIC:"Basic eignet sich besonders, wenn Cora vor allem als Webchat für Unternehmenswissen, häufige Fragen und eine einfache Lead-Erfassung eingesetzt werden soll.",
+ PRO:"Pro ist in der Regel das umfassendere Paket, wenn Cora aktiv Gespräche führen, Interessenten qualifizieren, mehrere Gesprächswege abbilden und den Lead-Prozess stärker auf den Betrieb zuschneiden soll.",
+ ENTERPRISE:"Enterprise ist für individuelle oder komplexere Anforderungen gedacht, etwa besondere Integrationen, mehrere Standorte, umfangreichere Prozesse oder einen individuell definierten Leistungsumfang."
+};
+
+function packageRecommendation(industry){
+ const label=industryLabels[industry]||"Unternehmen";
+ return "Für Ihre "+label+" würde ich im ersten Schritt Pro als naheliegende Ausgangsbasis betrachten. Pro ist in der Regel das umfassendere Paket für eine aktive Gesprächsführung und Lead-Qualifizierung. Basic kann bereits sehr gute Ergebnisse liefern, wenn der Schwerpunkt auf Webchat, Unternehmenswissen und einfacher Anfrageerfassung liegt. Enterprise würde ich erst prüfen, wenn besondere Anforderungen oder komplexere Strukturen vorliegen.\n\nDie endgültige Einordnung würde ich aber nicht allein aus dem Chat treffen. In einem kurzen Beratungsgespräch können wir Ihren konkreten Einsatz, die gewünschten Gesprächswege, Lead-Felder, Integrationen und den erwarteten Umfang klassifizieren und gemeinsam entscheiden, welches Paket tatsächlich passt.\n\nWenn Sie möchten, hinterlassen Sie Ihre Kontaktdaten über das Anfrageformular auf der Seite. Dann können wir uns gezielt mit Ihnen in Verbindung setzen.";
+}
+
 const industryResponses={
  FITNESS:{
   intro:"Für ein Fitnessstudio kann Cora deutlich mehr als eine klassische FAQ-Box. Sie kann Website-Besucher beraten, Interesse erkennen und aus einem unverbindlichen Besucher schrittweise eine qualifizierte Anfrage machen.",
@@ -171,6 +182,10 @@ function answerIndustry(q){
  const data=industryResponses[state.industry];
  const t=normalize(q);
  if(!data)return null;
+
+ if(/welches paket|welches produkt|was passt|welcher tarif|basic|pro|enterprise|geeignetsten|geeignetste|am besten|empfehl/.test(t)){
+  return packageRecommendation(state.industry);
+ }
 
  if(/wie|warum|konkret|beispiel|genau/.test(t)&&/fragen|gespraech|qualifiz|kunden|interessent|lead/.test(t)){
   return "Genau hier liegt der Lead-Fokus: Cora soll nicht möglichst viele Informationen auf einmal ausgeben. Sie soll erkennen, ob echtes Interesse besteht, die passende nächste Frage stellen und die Anfrage schrittweise vervollständigen. Für Ihre "+industryLabels[state.industry]+" würde der Ablauf beispielsweise mit einer Bedarfsermittlung beginnen:\n\n"+data.flow.map((x,i)=>(i+1)+". "+x).join("\n")+"\n\nDanach kann Cora die Angaben als strukturierte Anfrage zusammenfassen.";
