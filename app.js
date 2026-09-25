@@ -297,6 +297,7 @@ demoInput?.addEventListener("keydown",e=>{
    window.coraSubmitDemoQuestion(e);
  }
 });
+document.getElementById("demoReset")?.addEventListener("click",resetDemo);
 
 document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>runDemo(b.dataset.prompt)));
 
