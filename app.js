@@ -284,7 +284,7 @@ function getAnswer(q){
  if(state.industry && /wie funktioniert|wie laeuft|ablauf|prozess/.test(normalize(q))){
   const data=industryResponses[state.industry];
   if(data){
-   return "Für "+industryLabels[state.industry]+" würde ich den Ablauf nicht mit einer allgemeinen Funktionsliste beginnen. Cora reagiert zuerst auf das konkrete Anliegen, gibt eine kurze fachlich passende Antwort und stellt anschließend genau die nächste Frage, die für die Anfrage relevant ist.\\n\\nTypischer Ablauf:\\n1. Anliegen erkennen\\n2. Relevante Information geben\\n3. Bedarf mit 1–2 gezielten Rückfragen konkretisieren\\n4. Nur notwendige Angaben für den Lead erfassen\\n5. Anfrage zusammenfassen\\n6. Kontaktaufnahme über das Anfrageformular auslösen\\n\\nFür Ihr Unternehmen können Sie jetzt direkt mit einem konkreten Fall starten. Beispiel: „Ich interessiere mich für ein Fahrzeug und möchte wissen, was für mich infrage kommt."";
+   return "Für "+industryLabels[state.industry]+" würde ich den Ablauf nicht mit einer allgemeinen Funktionsliste beginnen. Cora reagiert zuerst auf das konkrete Anliegen, gibt eine kurze fachlich passende Antwort und stellt anschließend genau die nächste Frage, die für die Anfrage relevant ist.\\n\\nTypischer Ablauf:\\n1. Anliegen erkennen\\n2. Relevante Information geben\\n3. Bedarf mit 1–2 gezielten Rückfragen konkretisieren\\n4. Nur notwendige Angaben für den Lead erfassen\\n5. Anfrage zusammenfassen\\n6. Kontaktaufnahme über das Anfrageformular auslösen\\n\\nFür Ihr Unternehmen können Sie jetzt direkt mit einem konkreten Fall starten. Beispiel: „Ich interessiere mich für ein Fahrzeug und möchte wissen, was für mich infrage kommt.“";
   }
  }
  if(industryLabels[intent]){
