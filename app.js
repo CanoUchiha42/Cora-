@@ -8,7 +8,7 @@ const demoMessages=document.getElementById("demoMessages"),demoInput=document.ge
 const state={
  industry:null,lastIntent:null,turns:0,stage:"discovery",
  profile:{company:null,website:null,location:null,needs:[],service:null,budget:null,goal:null},
- conversation:{questionCount:0,leadMode:false}
+ conversation:{questionCount:0,leadMode:false,packageMode:false,packageQuestionCount:0}
 };
 
 const industryLabels={
@@ -48,7 +48,13 @@ const packageGuidance={
 
 function packageRecommendation(industry){
  const label=industryLabels[industry]||"Unternehmen";
- return "Für Ihre "+label+" würde ich im ersten Schritt Pro als naheliegende Ausgangsbasis betrachten. Pro ist in der Regel das umfassendere Paket für eine aktive Gesprächsführung und Lead-Qualifizierung. Basic kann bereits sehr gute Ergebnisse liefern, wenn der Schwerpunkt auf Webchat, Unternehmenswissen und einfacher Anfrageerfassung liegt. Enterprise würde ich erst prüfen, wenn besondere Anforderungen oder komplexere Strukturen vorliegen.\n\nDie endgültige Einordnung würde ich aber nicht allein aus dem Chat treffen. In einem kurzen Beratungsgespräch können wir Ihren konkreten Einsatz, die gewünschten Gesprächswege, Lead-Felder, Integrationen und den erwarteten Umfang klassifizieren und gemeinsam entscheiden, welches Paket tatsächlich passt.\n\nWenn Sie möchten, hinterlassen Sie Ihre Kontaktdaten über das Anfrageformular auf der Seite. Dann können wir uns gezielt mit Ihnen in Verbindung setzen.";
+ if(industry==="SHK"){
+  state.stage="package";
+  state.conversation.packageMode=true;
+  state.conversation.packageQuestionCount=1;
+  return "Für einen Heizungsbetrieb ist Pro zunächst die naheliegende Ausgangsbasis, wenn Cora nicht nur Fragen beantworten, sondern Interessenten aktiv aufnehmen und vorqualifizieren soll.\n\nBasic kann bereits sinnvoll sein, wenn hauptsächlich Webchat, Unternehmenswissen, FAQs und einfache Anfrageerfassung benötigt werden. Enterprise würde ich erst bei wirklich komplexen individuellen Anforderungen prüfen.\n\nDamit ich die Einordnung für Ihren Betrieb besser treffen kann, gehen wir kurz Schritt für Schritt vor.\n\n1. Wie viele Standorte oder Betriebe sollen Cora nutzen?";
+ }
+ return "Für Ihre "+label+" ist Pro zunächst eine naheliegende Ausgangsbasis, wenn Cora aktiv Gespräche führen und Leads qualifizieren soll. Basic kann bereits sehr gute Ergebnisse liefern, wenn Webchat, Unternehmenswissen, FAQs und einfache Anfrageerfassung im Mittelpunkt stehen. Enterprise prüfen wir erst bei komplexen individuellen Anforderungen.\n\nDamit die Einordnung nicht pauschal erfolgt, können wir kurz Ihren konkreten Einsatz, die gewünschten Gesprächswege, Lead-Felder, Integrationen und den Umfang prüfen. Danach führen wir Sie Schritt für Schritt zum Anfrageformular und zu einem persönlichen Beratungsgespräch.";
 }
 
 const industryResponses={
@@ -184,7 +190,7 @@ function answerIndustry(q){
  if(!data)return null;
 
  if(/welches paket|welches produkt|was passt|welcher tarif|basic|pro|enterprise|geeignetsten|geeignetste|am besten|empfehl/.test(t)){
-  return packageRecommendation(state.industry)+"\n\nWenn Sie möchten, kann ich noch kurz nach Standorten, gewünschtem Funktionsumfang und Integrationen fragen und die Einordnung genauer vorbereiten.";
+  return packageRecommendation(state.industry);
  }
 
  if(/preis|kosten|monatlich|einmalig/.test(t))return responses.PRICE();
@@ -242,6 +248,17 @@ function getAnswer(q){
  const intent=detectIntent(q);
  state.lastIntent=intent;
 
+ if(state.conversation.packageMode&&state.industry==="SHK"){
+  const t=normalize(q);
+  if(!/preis|kosten|dsgvo|datenschutz|integration|setup|einrichten/.test(t)){
+   const n=state.conversation.packageQuestionCount++;
+   if(n===2) return "Danke. Das hilft.\n\n2. Was soll Cora auf Ihrer Website hauptsächlich übernehmen: eher FAQs und einfache Anfragen oder aktiv Leads qualifizieren, Projekte vorsortieren und Rückruf-/Angebotsanfragen vorbereiten?";
+   if(n===3) return "Verstanden.\n\n3. Brauchen Sie Anbindungen an bestehende Systeme, zum Beispiel CRM, Kalender, Formulare oder andere interne Prozesse?";
+   state.conversation.packageMode=false;
+   state.stage="discovery";
+   return "Auf Basis Ihrer Angaben lässt sich der passende Umfang jetzt deutlich genauer einordnen. Für einen typischen Heizungsbetrieb bleibt Pro die naheliegende Ausgangsbasis, wenn Cora aktiv qualifizieren und mehrere Gesprächswege übernehmen soll. Basic kann ausreichen, wenn der Einsatz bewusst einfacher gehalten wird. Enterprise wäre erst bei komplexeren individuellen Anforderungen relevant.\n\nDer nächste Schritt ist jetzt kein automatischer Kauf: Im Anfrageformular können Sie Ihre Kontaktdaten und kurz Ihren gewünschten Einsatz eintragen. Anschließend können wir im persönlichen Gespräch prüfen, welches Paket und welcher Umfang tatsächlich zu Ihrem Betrieb passen.\n\n→ Bitte gehen Sie jetzt zum Formular „Cora anfragen“ und hinterlassen Sie dort Name, Unternehmen, E-Mail und Ihre gewünschte Anwendung.";
+  }
+ }
  if(state.conversation.leadMode&&state.industry){
   const t=normalize(q);
   if(!/preis|kosten|dsgvo|datenschutz|integration|setup|einrichten/.test(t)){
