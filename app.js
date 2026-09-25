@@ -1,433 +1,173 @@
 (() => {
 "use strict";
 const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbzDrLyFEsCVSVqLphU7fiCrNo_slakHFf6R8JSHvqT-5Lr6Y5uxyBQbNshS0uzUXSHa/exec";
-const menuBtn=document.getElementById("menuBtn"),mobileNav=document.getElementById("mobileNav");
-if(menuBtn&&mobileNav){menuBtn.addEventListener("click",()=>{const open=mobileNav.classList.toggle("open");menuBtn.setAttribute("aria-expanded",String(open));menuBtn.setAttribute("aria-label",open?"Menü schließen":"Menü öffnen")});mobileNav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>{mobileNav.classList.remove("open");menuBtn.setAttribute("aria-expanded","false")}))}
-document.querySelectorAll("[data-scroll-demo]").forEach(btn=>btn.addEventListener("click",()=>document.getElementById("demo")?.scrollIntoView({behavior:"smooth",block:"start"})));
-const demoMessages=document.getElementById("demoMessages"),demoInput=document.getElementById("demoInput"),demoForm=document.getElementById("demoForm");
-const state={
- industry:null,lastIntent:null,turns:0,stage:"discovery",
- profile:{company:null,website:null,location:null,needs:[],service:null,budget:null,goal:null},
- conversation:{questionCount:0,leadMode:false,packageMode:false,packageQuestionCount:0}
-};
+const $=id=>document.getElementById(id);
+const demoMessages=$("demoMessages"),demoInput=$("demoInput"),demoSend=$("demoSend");
+const state={industry:null,turns:0,stage:"discovery",profile:{goal:null,service:null,need:null,location:null,timing:null,contactIntent:null,answers:[]},conversation:{leadMode:false,questionIndex:0}};
 
-const industryLabels={
- RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",
- LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",FITNESS:"Fitnessstudio",TAX_ADVISOR:"Steuerberatung",
- CRAFT:"Handwerksbetrieb",SHK:"SHK-/Sanitär- und Heizungsbetrieb",BEAUTY:"Kosmetiksalon"
-};
+const industryLabels={BEAUTY:"Kosmetiksalon",FITNESS:"Fitnessstudio",SHK:"SHK-/Sanitär-/Heizungsbetrieb",RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",TAX_ADVISOR:"Steuerberatung",CRAFT:"Handwerksbetrieb"};
 
-const intents=[
- {id:"PRICE",p:["was kostet","wieviel kostet","wie viel kostet","preis","preise","kosten","monatlich","einmalig","basic","pro","enterprise"]},
- {id:"FEATURES",p:["was kann","was kannst du","was kannst","was bietet","was bietest","funktionen","feature","fähigkeiten","faehigkeiten","möglichkeiten","moeglichkeiten"]},
- {id:"LEAD",p:["lead","anfrage erfassen","anfragen erfassen","kontaktdaten","qualifizieren","vorqualifizieren","interessent","anfrage aufnehmen","kunden gewinnen"]},
- {id:"SETUP",p:["einrichten","eingerichtet","einbindung","installieren","website einbinden","implementierung","aufsetzen","integration"]},
- {id:"HOW_IT_WORKS",p:["wie funktioniert","wie arbeitet","wie läuft","wie laeuft","ablauf","prozess","wie gehst du vor"]},
- {id:"PRIVACY",p:["dsgvo","datenschutz","personenbezogene daten","datenverarbeitung","datensicherheit"]},
- {id:"INTEGRATIONS",p:["crm","kalender","calendar","schnittstelle","api","hubspot","salesforce","pipedrive","zapier","n8n","google sheets"]},
- {id:"PURCHASE",p:["kaufen","buchen","bestellen","angebot","beauftragen","starten"]},
- {id:"CONTACT",p:["kontakt","mensch sprechen","mit jemandem","rückruf","rueckruf","berater"]},
- {id:"INDUSTRIES",p:["welche branche","welche branchen","für wen","fuer wen","geeignet"]},
- {id:"RESTAURANT",p:["restaurant","reservierung","reservierungen","speisekarte","tisch","gastronomie"]},
- {id:"HOTEL",p:["hotel","zimmer","check-in","check in","frühstück","fruehstueck","gäste"]},
- {id:"AUTOHAUS",p:["autohaus","fahrzeug","fahrzeuge","probefahrt","werkstatt","fahrzeuganfrage","autohändler"]},
- {id:"REAL_ESTATE",p:["immobilien","immobilie","makler","besichtigung","mietwohnung","kaufinteresse"]},
- {id:"LAW_FIRM",p:["rechtsanwalt","kanzlei","anwalt","mandat"]},
- {id:"DENTAL",p:["zahnarzt","zahn","zahnarztpraxis","behandlung","zahnschmerzen"]},
- {id:"FITNESS",p:["fitness","fitnessstudio","mitgliedschaft","probetraining","kurs","personal training"]},
- {id:"TAX_ADVISOR",p:["steuerberater","steuerberatung","steuerkanzlei"]},
- {id:"BEAUTY",p:["kosmetiksalon","kosmetik","beauty","beautysalon","nagelstudio","friseursalon","friseur","ästhetik","aesthetik","wimpern","gesichtsbehandlung"]},
- {id:"BEAUTY",p:["kosmetiksalon","kosmetik","beauty","beautysalon","nagelstudio","friseursalon","friseur","ästhetik","aesthetik","wimpern","gesichtsbehandlung"]},
- {id:"SHK",p:["sanitär","sanitaer","heizung","heizungsbau","heizungsbauer","heizungstechnik","shk","wärmepumpe","waermepumpe","klima","klimatechnik","bad","badsanierung","wasserinstallation","gasinstallation"]},
- {id:"CRAFT",p:["handwerk","handwerker","meisterbetrieb","projektanfrage","elektriker","maler","installateur","bauunternehmen"]}
-];
+const industryData={
+BEAUTY:{intro:"Für einen Kosmetiksalon ist Cora besonders interessant, wenn aus Website-Besuchern mehr konkrete Termin-, Beratungs- und Behandlungsanfragen entstehen sollen.",useCases:["Behandlungen verständlich erklären und passende Leistungen anhand des Wunsches einordnen","zwischen konkretem Terminwunsch, Erstberatung und allgemeiner Information unterscheiden","Interesse und Ziel erfassen, z. B. Hautbild, Haarentfernung, Nägel, Wimpern oder Ästhetik","Wunschzeitraum und relevante Anforderungen aufnehmen","Kontaktdaten erst dann abfragen, wenn ein konkretes Interesse erkennbar ist","die Anfrage mit den bereits genannten Informationen strukturiert an den Salon übergeben"],questions:["Welche Behandlung oder welches Ergebnis interessiert Sie?","Geht es um einen konkreten Termin oder möchten Sie zunächst beraten werden?","Was ist Ihnen dabei besonders wichtig?","Wann wäre ein passender Zeitraum?","Wie können wir Sie für die weitere Abstimmung erreichen?"],examples:["Gesichtsbehandlung","Haarentfernung","Nägel","Wimpern","ästhetische Behandlung"],value:"Der entscheidende Mehrwert ist nicht der Chat an sich: Cora beantwortet zuerst das Anliegen und nutzt die Antworten anschließend, um die Anfrage sinnvoll zu qualifizieren. Der Salon erhält dadurch mehr Kontext als bei einem einfachen „Name + Telefonnummer“-Formular und muss im ersten Kontakt weniger Grundlagen erfragen."},
+FITNESS:{intro:"Für ein Fitnessstudio kann Cora Besucher zu Probetraining, Mitgliedschaft oder Beratung führen und das konkrete Ziel des Interessenten erfassen.",useCases:["Mitgliedschaften und Leistungen erklären","Trainingsziel erkennen","Probetraining oder Beratung vorbereiten","Kurse und Öffnungszeiten beantworten","Interesse nach Zeitraum und Bedarf konkretisieren","Kontaktanfragen strukturiert erfassen"],questions:["Was möchten Sie erreichen – Muskelaufbau, Abnehmen, Ausdauer oder allgemeine Fitness?","Möchten Sie ein Probetraining oder zunächst Informationen zu einer Mitgliedschaft?","Wann wäre ein passender Zeitraum?","Wie können wir Sie für die weitere Abstimmung erreichen?"],examples:["Probetraining","Mitgliedschaft","Personal Training","Abnehmen"],value:"Der Mehrwert liegt darin, dass aus einem anonymen Website-Besuch ein konkreter Gesprächsanlass werden kann und Ihr Team bereits weiß, welches Ziel und welches Interesse der Besucher hat."},
+SHK:{intro:"Für einen SHK-, Sanitär- oder Heizungsbetrieb kann Cora aus einer allgemeinen Website-Frage eine strukturierte Projekt- oder Rückrufanfrage entwickeln.",useCases:["Reparatur, Wartung, Modernisierung und Neubau unterscheiden","Leistung wie Heizung, Wärmepumpe, Sanitär, Bad oder Klima einordnen","Objektart, Ort und Dringlichkeit erfassen","Projektinformationen strukturiert aufnehmen","Rückruf- und Angebotsanfragen vorbereiten"],questions:["Geht es um Reparatur, Wartung, Modernisierung oder Neubau?","Welche Leistung oder Anlage ist betroffen?","Um welche Immobilie handelt es sich und wo befindet sie sich?","Wie dringend ist die Anfrage?","Wie kann der Betrieb Sie erreichen?"],examples:["Wärmepumpe","Heizung defekt","Badsanierung","Angebot"],value:"Der Betrieb erhält vor dem ersten Rückruf bereits die wichtigsten Angaben und kann dadurch gezielter reagieren, statt bei jeder Anfrage wieder bei null zu beginnen."},
+RESTAURANT:{intro:"Für ein Restaurant kann Cora Gäste informieren und Reservierungs-, Gruppen- oder Veranstaltungsanfragen strukturiert aufnehmen.",useCases:["Speisekarte und Leistungen erklären","Öffnungszeiten und Standort beantworten","Reservierungswunsch erfassen","Personenzahl und Wunschzeit abfragen","Gruppen- und Veranstaltungsanfragen vorsortieren"],questions:["Für welchen Tag möchten Sie anfragen?","Wie viele Personen sind es?","Welche Uhrzeit wäre ungefähr gewünscht?","Gibt es besondere Wünsche oder Hinweise?"],examples:["Tisch reservieren","6 Personen","Feier","Gruppenanfrage"],value:"Gäste bekommen sofort Antworten, während das Restaurant aus relevanten Anfragen strukturierte Informationen erhält."},
+HOTEL:{intro:"Für ein Hotel kann Cora Fragen zu Zimmern und Leistungen beantworten und Buchungsinteressen strukturiert vorbereiten.",useCases:["Zimmer und Ausstattung erklären","Anreise, Frühstück und Leistungen beantworten","Reisezeitraum und Personenzahl erfassen","Sonderwünsche aufnehmen","Buchungs- oder Rückrufinteresse qualifizieren"],questions:["Wann möchten Sie anreisen?","Wie lange möchten Sie bleiben?","Für wie viele Personen suchen Sie?","Gibt es besondere Anforderungen an das Zimmer?"],examples:["Doppelzimmer","Wochenende","Familienzimmer","Sonderwunsch"],value:"Der Besucher erhält unmittelbar Orientierung und das Hotel bekommt bereits vor dem persönlichen Kontakt die wichtigsten Eckdaten."},
+AUTOHAUS:{intro:"Für ein Autohaus kann Cora nicht nur Fahrzeuge erklären, sondern Kauf-, Leasing-, Probefahrt- und Serviceinteressen unterscheiden und vorqualifizieren.",useCases:["Modell, Fahrzeugtyp und Ausstattung einordnen","Kauf, Leasing und Finanzierung unterscheiden","Budget und Anforderungen als freiwillige Angaben erfassen","Probefahrt- und Beratungstermine vorbereiten","Inzahlungnahme und Fahrzeugwechsel erkennen","Werkstatt- und Serviceanfragen vorsortieren"],questions:["Was suchen Sie konkret – ein bestimmtes Modell, eine Preisklasse oder zunächst eine Beratung?","Geht es um Kauf, Leasing, Finanzierung, Probefahrt, Inzahlungnahme oder Service?","Welche Anforderungen sind Ihnen wichtig?","Wann möchten Sie ungefähr kaufen oder einen Termin wahrnehmen?","Wie können wir Sie erreichen?"],examples:["Probefahrt","Leasing","Gebrauchtwagen","Werkstatttermin"],value:"Der Vertrieb erhält vor dem Rückruf bereits Kontext zum Fahrzeuginteresse und muss nicht mit einer völlig unqualifizierten Anfrage beginnen."},
+REAL_ESTATE:{intro:"Für ein Immobilienunternehmen kann Cora Suchprofile und Besichtigungsinteressen strukturiert erfassen.",useCases:["Kauf- und Mietinteresse unterscheiden","Objektart und Lage erfassen","Budget und Suchkriterien aufnehmen","Besichtigungswünsche strukturieren","Kontaktdaten qualifizieren"],questions:["Suchen Sie zum Kauf oder zur Miete?","Welche Lage und Objektart kommt infrage?","Welches Budget ist vorgesehen?","Möchten Sie eine Besichtigung anfragen?"],examples:["Wohnung kaufen","Mietwohnung","Besichtigung","Budget"],value:"Statt einer unstrukturierten Nachricht entsteht ein klareres Suchprofil, mit dem das Team schneller weiterarbeiten kann."},
+LAW_FIRM:{intro:"Für eine Kanzlei kann Cora allgemeine Informationen geben und neue Anfragen vorsortieren, ohne individuelle Rechtsberatung vorzutäuschen.",useCases:["Fachgebiete und Leistungen erklären","Anliegen grob einordnen","Erstgespräch vorbereiten","Rückruf- und Kontaktwünsche erfassen"],questions:["Worum geht es bei Ihrer Anfrage?","Welches Rechtsgebiet betrifft das ungefähr?","Möchten Sie ein Erstgespräch anfragen?","Wie können wir Sie erreichen?"],examples:["Arbeitsrecht","Erstgespräch","Rückruf"],value:"Die Kanzlei erhält eine besser strukturierte Erstinformation, während der Besucher schneller zum passenden nächsten Schritt geführt wird."},
+DENTAL:{intro:"Für eine Zahnarztpraxis kann Cora Praxisinformationen beantworten und Termin- oder Rückrufanfragen strukturieren.",useCases:["Leistungen und Praxisinformationen erklären","Neupatienten-Anfragen erfassen","Terminwünsche strukturieren","organisatorische Fragen beantworten"],questions:["Geht es um einen Termin, eine allgemeine Frage oder eine bestehende Behandlung?","Sind Sie bereits Patient oder neu in der Praxis?","Welcher Zeitraum wäre passend?"],examples:["Neupatient","Termin","Behandlung"],value:"Die Praxis erhält relevante organisatorische Informationen vor dem persönlichen Kontakt. Medizinische Diagnosen oder individuelle Behandlungsempfehlungen sollte Cora nicht ersetzen."},
+TAX_ADVISOR:{intro:"Für eine Steuerberatung kann Cora Leistungsinteressen und neue Anfragen vorstrukturieren.",useCases:["Leistungsbereiche erklären","Privat- und Unternehmenskunden unterscheiden","Erstgespräche vorbereiten","Anliegen und Kontaktdaten erfassen"],questions:["Geht es um private oder unternehmerische Themen?","Welche Leistung wird ungefähr benötigt?","Handelt es sich um eine neue Anfrage?","Wie können wir Sie erreichen?"],examples:["Unternehmen","Buchhaltung","Steuererklärung","Erstgespräch"],value:"Das Team erhält vor dem Erstkontakt bereits eine klarere Vorstellung vom Anliegen und kann die Anfrage gezielter bearbeiten."},
+CRAFT:{intro:"Für einen Handwerksbetrieb kann Cora aus einer kurzen Problembeschreibung eine strukturierte Projekt- oder Angebotsanfrage entwickeln.",useCases:["Leistung und Projektart erkennen","Reparatur, Wartung, Modernisierung und Neubau unterscheiden","Objekt und Standort erfassen","Zeitraum und Dringlichkeit abfragen","Rückruf- und Angebotsanfragen vorbereiten"],questions:["Welche Arbeit soll durchgeführt werden?","Geht es um Neubau, Modernisierung, Wartung oder Reparatur?","Wo befindet sich das Objekt?","Wann soll die Arbeit ungefähr stattfinden?"],examples:["Elektriker","Renovierung","Reparatur","Angebot"],value:"Der Betrieb erhält vor dem Rückruf bereits die wichtigsten Eckdaten und kann schneller entscheiden, wie die Anfrage weiterbearbeitet wird."}
+};
 
 const packageGuidance={
- BASIC:"Basic eignet sich besonders, wenn Cora vor allem als Webchat für Unternehmenswissen, häufige Fragen und eine einfache Lead-Erfassung eingesetzt werden soll.",
- PRO:"Pro ist in der Regel das umfassendere Paket, wenn Cora aktiv Gespräche führen, Interessenten qualifizieren, mehrere Gesprächswege abbilden und den Lead-Prozess stärker auf den Betrieb zuschneiden soll.",
- ENTERPRISE:"Enterprise ist für individuelle oder komplexere Anforderungen gedacht, etwa besondere Integrationen, mehrere Standorte, umfangreichere Prozesse oder einen individuell definierten Leistungsumfang."
+BASIC:"Basic passt vor allem, wenn Cora als professioneller Webchat für Unternehmenswissen, häufige Fragen und einfache Lead-Erfassung eingesetzt werden soll.",
+PRO:"Pro passt besonders, wenn Cora aktiv Gespräche führen, Interessenten qualifizieren, mehrere Gesprächswege abbilden und den Lead-Prozess stärker auf den Betrieb zuschneiden soll.",
+ENTERPRISE:"Enterprise ist für individuelle oder komplexere Anforderungen gedacht, etwa mehrere Standorte, besondere Integrationen oder umfangreichere Prozesse."
 };
 
-function packageRecommendation(industry){
- const label=industryLabels[industry]||"Unternehmen";
- if(industry==="SHK"){
-  state.stage="package";
-  state.conversation.packageMode=true;
-  state.conversation.packageQuestionCount=1;
-  return "Für einen Heizungsbetrieb ist Pro zunächst die naheliegende Ausgangsbasis, wenn Cora nicht nur Fragen beantworten, sondern Interessenten aktiv aufnehmen und vorqualifizieren soll.\n\nBasic kann bereits sinnvoll sein, wenn hauptsächlich Webchat, Unternehmenswissen, FAQs und einfache Anfrageerfassung benötigt werden. Enterprise würde ich erst bei wirklich komplexen individuellen Anforderungen prüfen.\n\nDamit ich die Einordnung für Ihren Betrieb besser treffen kann, gehen wir kurz Schritt für Schritt vor.\n\n1. Wie viele Standorte oder Betriebe sollen Cora nutzen?";
- }
- return "Für Ihre "+label+" ist Pro zunächst eine naheliegende Ausgangsbasis, wenn Cora aktiv Gespräche führen und Leads qualifizieren soll. Basic kann bereits sehr gute Ergebnisse liefern, wenn Webchat, Unternehmenswissen, FAQs und einfache Anfrageerfassung im Mittelpunkt stehen. Enterprise prüfen wir erst bei komplexen individuellen Anforderungen.\n\nDamit die Einordnung nicht pauschal erfolgt, können wir kurz Ihren konkreten Einsatz, die gewünschten Gesprächswege, Lead-Felder, Integrationen und den Umfang prüfen. Danach führen wir Sie Schritt für Schritt zum Anfrageformular und zu einem persönlichen Beratungsgespräch.";
-}
+function normalize(value){return String(value||"").toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/[.,!?;:()[\]{}"' ]/g," ").replace(/\s+/g," ").trim();}
 
-const industryResponses={
- FITNESS:{
-  intro:"Für ein Fitnessstudio kann Cora deutlich mehr als eine klassische FAQ-Box. Sie kann Website-Besucher beraten, Interesse erkennen und aus einem unverbindlichen Besucher schrittweise eine qualifizierte Anfrage machen.",
-  capabilities:["Mitgliedschaften und Tarife erklären","Probetraining und Beratungsgespräche aufnehmen","Kurse, Öffnungszeiten und Ausstattung erklären","Trainingsziele und Interessen erfassen","Fragen zu Vertragslaufzeit, Beiträgen und Kündigung beantworten","Interessenten nach Standort, Zeitraum und Kontaktdaten qualifizieren"],
-  flow:["Was möchtest du erreichen – Muskelaufbau, Abnehmen, Ausdauer oder allgemeine Fitness?","Möchtest du ein Probetraining oder zunächst Informationen zu einer Mitgliedschaft?","Wann wäre ein passender Zeitraum für dich?","Wie können wir dich für die Terminabstimmung erreichen?"],
-  lead:"Aus diesen Antworten kann Cora eine strukturierte Anfrage erzeugen, statt nur Name und Telefonnummer einzusammeln."
- },
- SHK:{
-  intro:"Für einen SHK-, Sanitär- oder Heizungsbetrieb kann Cora Website-Anfragen bereits vorqualifizieren und den Interessenten anhand seines konkreten Problems durch das Gespräch führen.",
-  capabilities:["Heizung, Wärmepumpe, Sanitär, Badsanierung und Klima erklären","zwischen Reparatur, Wartung, Modernisierung und Neubau unterscheiden","Objektart und Projektort erfassen","Dringlichkeit und gewünschte Leistung abfragen","technisch relevante Erstinformationen strukturiert aufnehmen","Rückruf- oder Angebotsanfragen vorbereiten"],
-  flow:["Geht es um eine Reparatur, Wartung, Modernisierung oder einen Neubau?","Welche Anlage oder Leistung ist betroffen?","Um welche Immobilie handelt es sich?","Wo befindet sich das Objekt und wie dringend ist die Anfrage?","Wie kann Ihr Betrieb den Interessenten erreichen?"],
-  lead:"So entsteht aus einer allgemeinen Website-Anfrage eine deutlich verwertbarere Projektanfrage."
- },
- RESTAURANT:{
-  intro:"Für ein Restaurant kann Cora Gäste informieren und gleichzeitig Reservierungs- und Kontaktanfragen strukturiert aufnehmen.",
-  capabilities:["Speisekarte und Leistungen erklären","Öffnungszeiten und Standort beantworten","Reservierungswünsche aufnehmen","Personenzahl und gewünschten Zeitpunkt abfragen","Fragen zu Veranstaltungen oder Gruppenanfragen beantworten"],
-  flow:["Für welchen Tag möchtest du anfragen?","Wie viele Personen seid ihr?","Welche Uhrzeit wäre ungefähr gewünscht?","Gibt es besondere Wünsche oder Hinweise?"],
-  lead:"Die Anfrage kann anschließend strukturiert an den gewünschten Prozess übergeben werden. Eine echte Reservierung erfordert die entsprechende Integration."
- },
- HOTEL:{
-  intro:"Für ein Hotel kann Cora Gäste vor, während und nach einer Buchungsanfrage informieren und qualifizieren.",
-  capabilities:["Zimmer und Ausstattung erklären","Fragen zu Anreise und Frühstück beantworten","Buchungsinteresse strukturieren","Reisezeitraum und Personenzahl erfassen","Sonderwünsche aufnehmen"],
-  flow:["Wann möchten Sie anreisen?","Wie lange möchten Sie bleiben?","Für wie viele Personen wird gesucht?","Gibt es besondere Anforderungen an das Zimmer?"],
-  lead:"Die erhobenen Informationen können als strukturierte Anfrage weitergegeben werden."
- },
- AUTOHAUS:{
-  intro:"Für ein Autohaus kann Cora Besucher nicht nur über Fahrzeuge informieren, sondern ihr konkretes Anliegen erkennen und daraus einen verwertbaren Verkaufs-, Probefahrt- oder Service-Lead entwickeln. Der Dialog richtet sich dabei nach dem, was der Besucher tatsächlich fragt.",
-  capabilities:["Fahrzeugmodelle, Ausstattung und verfügbare Leistungen erklären","Kauf-, Leasing- und Finanzierungsinteresse vorstrukturieren","Marke, Modell, Fahrzeugtyp und gewünschte Ausstattung erfassen","Budget, Anzahlung oder gewünschte monatliche Rate als freiwillige Qualifizierungsangabe aufnehmen","Neu- oder Gebrauchtwageninteresse unterscheiden","Probefahrt- und Beratungstermine vorbereiten","Inzahlungnahme und Fahrzeugwechsel als Anliegen erkennen","Werkstatt-, Inspektions- und Serviceanfragen aufnehmen","Rückruf-, Angebots- und Kontaktwünsche strukturieren"],
-  flow:["Was suchen Sie konkret – ein bestimmtes Modell, ein Fahrzeug in einer bestimmten Preisklasse oder zunächst eine Beratung?","Geht es um Kauf, Leasing, Finanzierung, Probefahrt, Inzahlungnahme oder Service?","Welche Anforderungen sind Ihnen wichtig, zum Beispiel Budget, Fahrzeugart, Antrieb oder Ausstattung?","Wann möchten Sie das Fahrzeug ungefähr kaufen oder einen Termin wahrnehmen?","Wie können wir Sie für die weitere Beratung erreichen?"],
-  lead:"Am Ende kann Cora die Angaben als kompakte Anfrage zusammenfassen, damit der Vertrieb nicht bei null anfangen muss."
- },
- REAL_ESTATE:{
-  intro:"Für Immobilienunternehmen kann Cora Interessenten zu Objekten führen und Suchprofile strukturiert erfassen.",
-  capabilities:["Objekte und Ausstattungsmerkmale erklären","Kauf- oder Mietinteresse unterscheiden","Budget und Suchkriterien erfassen","Besichtigungswünsche aufnehmen","Kontaktdaten qualifizieren"],
-  flow:["Suchen Sie zum Kauf oder zur Miete?","Welche Lage oder Objektart kommt infrage?","Welches Budget ist vorgesehen?","Möchten Sie eine Besichtigung anfragen?"],
-  lead:"Aus den Antworten kann ein strukturierter Interessenten-Lead entstehen."
- },
- LAW_FIRM:{
-  intro:"Für eine Kanzlei kann Cora Erstinformationen geben und neue Anfragen vorsortieren, ohne individuelle Rechtsberatung vorzutäuschen.",
-  capabilities:["Fachgebiete und Leistungen erklären","allgemeine Erstinformationen geben","Anliegen und Rückrufwünsche aufnehmen","Kontakt- und Terminwünsche strukturieren"],
-  flow:["Worum geht es bei Ihrer Anfrage?","Welches Rechtsgebiet betrifft das ungefähr?","Möchten Sie ein Erstgespräch anfragen?","Wie können wir Sie erreichen?"],
-  lead:"Die Anfrage kann anschließend strukturiert an die Kanzlei übergeben werden."
- },
- DENTAL:{
-  intro:"Für eine Zahnarztpraxis kann Cora Praxisinformationen liefern und Termin- oder Rückrufwünsche strukturieren.",
-  capabilities:["Leistungen und Praxisinformationen erklären","Terminwünsche aufnehmen","Neupatienten-Anfragen strukturieren","Öffnungszeiten und organisatorische Fragen beantworten"],
-  flow:["Geht es um einen Termin, eine allgemeine Frage oder eine bestehende Behandlung?","Sind Sie bereits Patient oder neu in der Praxis?","Welcher Zeitraum wäre für Sie passend?"],
-  lead:"Medizinische Diagnosen oder individuelle Behandlungsempfehlungen sollte Cora nicht vortäuschen."
- },
- TAX_ADVISOR:{
-  intro:"Für eine Steuerberatung kann Cora Leistungen erklären und neue Anfragen vorstrukturieren.",
-  capabilities:["Leistungsbereiche erklären","Erstgespräche vorbereiten","Unternehmens- oder Privatkunden unterscheiden","Anliegen und Kontaktdaten erfassen"],
-  flow:["Geht es um private oder unternehmerische Steuerfragen?","Welche Leistung wird ungefähr benötigt?","Handelt es sich um eine neue Anfrage oder einen bestehenden Mandanten?","Wie können wir Sie erreichen?"],
-  lead:"Individuelle Steuerberatung sollte weiterhin durch die zuständige Fachperson erfolgen."
- },
- BEAUTY:{
-  intro:"Für einen Kosmetiksalon kann Cora Website-Besucher gezielt zu passenden Behandlungen führen, Wünsche und Bedarf erfassen und daraus qualifizierte Termin- und Beratungsanfragen entwickeln.",
-  capabilities:["Behandlungen und Leistungen verständlich erklären","Interesse an konkreten Behandlungen erkennen","Wünsche, Ziel und relevante Anforderungen erfassen","zwischen Erstberatung, Terminwunsch und konkreter Behandlung unterscheiden","Termin- und Rückrufanfragen vorqualifizieren","Kontaktdaten für einen verwertbaren Lead aufnehmen"],
-  flow:["Welche Behandlung oder welches Ergebnis interessiert Sie?","Geht es um eine konkrete Behandlung oder möchten Sie zunächst beraten werden?","Was ist Ihnen dabei besonders wichtig, zum Beispiel Hautbild, Haarentfernung, Nägel oder Ästhetik?","Wann wäre ein passender Zeitraum für einen Termin?","Wie können wir Sie für die Terminabstimmung erreichen?"],
-  lead:"Der Mehrwert liegt darin, dass Cora nicht nur Fragen beantwortet: Sie erkennt das konkrete Interesse, führt den Besucher zur passenden nächsten Aktion und übergibt dem Salon eine bereits strukturierte Anfrage."\n },\n CRAFT:{\n  intro:"Für Handwerksbetriebe kann Cora aus einer kurzen Problembeschreibung eine strukturierte Projektanfrage entwickeln.",
-  capabilities:["Leistungen erklären","Projektart und Umfang erfassen","Objekt und Standort abfragen","Zeitraum und Dringlichkeit erfassen","Rückruf- und Angebotsanfragen vorbereiten"],
-  flow:["Welche Arbeit soll durchgeführt werden?","Geht es um Neubau, Modernisierung, Wartung oder Reparatur?","Wo befindet sich das Objekt?","Wann soll die Arbeit ungefähr stattfinden?"],
-  lead:"So erhält der Betrieb vor dem ersten Rückruf bereits die wichtigsten Informationen."
- }
-};
-
-function normalize(t){
- return String(t||"").toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").trim();
-}
-
-function detectIndustry(q){
- const t=normalize(q);
- const ordered=["BEAUTY","SHK","FITNESS","AUTOHAUS","RESTAURANT","HOTEL","REAL_ESTATE","LAW_FIRM","DENTAL","TAX_ADVISOR","CRAFT"];
- for(const id of ordered){
-  const found=intents.find(x=>x.id===id);
-  if(found&&found.p.some(k=>t.includes(normalize(k))))return id;
- }
+function detectIndustry(text){
+ const t=normalize(text);
+ const patterns={
+  BEAUTY:["kosmetiksalon","kosmetiksaloon","kosmetiksalons","kosmetik salon","beautysalon","beauty salon","nagelstudio","friseursalon","friseur","wimpern","gesichtsbehandlung","haarentfernung","aesthetik"],
+  FITNESS:["fitnessstudio","fitness studio","fitness","probetraining","mitgliedschaft","personal training"],
+  SHK:["heizung","heizungsbau","heizungsbauer","waermepumpe","sanitaer","sanitaerbetrieb","shk","badsanierung","klima","wasserinstallation"],
+  RESTAURANT:["restaurant","gastronomie","reservierung","speisekarte","tisch reservieren"],
+  HOTEL:["hotel","zimmer buchen","check in","check-in","fruehstueck"],
+  AUTOHAUS:["autohaus","autohandel","fahrzeug","probefahrt","leasing","werkstatt"],
+  REAL_ESTATE:["immobilien","immobilie","immobilienmakler","makler","besichtigung","mietwohnung"],
+  LAW_FIRM:["kanzlei","rechtsanwalt","anwalt","rechtsberatung"],
+  DENTAL:["zahnarzt","zahnarztpraxis","zahnbehandlung"],
+  TAX_ADVISOR:["steuerberater","steuerberatung","steuerkanzlei"],
+  CRAFT:["handwerksbetrieb","handwerker","meisterbetrieb","elektriker","maler","bauunternehmen"]
+ };
+ for(const [id,words] of Object.entries(patterns)){if(words.some(w=>t.includes(w)))return id;}
  return null;
 }
 
-function detectIntent(q){
- const t=normalize(q);
- const industry=detectIndustry(q);
- const scored=intents.map(i=>({
-  id:i.id,
-  score:i.p.reduce((n,k)=>n+(t.includes(normalize(k))?(k.includes(" ")?4:2):0),0)
- })).sort((a,b)=>b.score-a.score);
- const top=scored[0];
- if(industry && /wie kannst|was kannst|was kann|was bietest|was bietet|wie kannst du|hilfst du|hilfe|für mein unternehmen|fuer mein unternehmen/.test(t))return industry;
- return top&&top.score>0?top.id:"UNKNOWN";
-}
-
-function startLeadFlow(){
- const data=industryResponses[state.industry];
- if(!data)return null;
- state.stage="lead";
- state.conversation.leadMode=true;
- state.conversation.questionCount=1;
- return "Dann machen wir es konkret. Ich führe Sie Schritt für Schritt durch die Anfrage und stelle jeweils nur die nächste sinnvolle Frage.\n\n"+data.flow[0];
-}
-
-function extractProfile(q){
- const t=normalize(q);
- const industry=detectIndustry(q);
+function remember(text){
+ const t=normalize(text);
+ const industry=detectIndustry(text);
  if(industry)state.industry=industry;
- if(/waermepumpe/.test(t)&&!state.profile.needs.includes("Wärmepumpe"))state.profile.needs.push("Wärmepumpe");
- if(/badsanierung|bad/.test(t)&&!state.profile.needs.includes("Badsanierung"))state.profile.needs.push("Badsanierung");
- if(/wartung/.test(t)&&!state.profile.needs.includes("Wartung"))state.profile.needs.push("Wartung");
- if(/reparatur|stoerung|defekt/.test(t)&&!state.profile.needs.includes("Reparatur"))state.profile.needs.push("Reparatur");
- if(/probetraining/.test(t)&&!state.profile.needs.includes("Probetraining"))state.profile.needs.push("Probetraining");
- if(/mitgliedschaft|mitglied/.test(t)&&!state.profile.needs.includes("Mitgliedschaft"))state.profile.needs.push("Mitgliedschaft");
- if(/neubau/.test(t)&&!state.profile.needs.includes("Neubau"))state.profile.needs.push("Neubau");
- if(/modernisierung/.test(t)&&!state.profile.needs.includes("Modernisierung"))state.profile.needs.push("Modernisierung");
- if(/reparatur/.test(t)&&!state.profile.needs.includes("Reparatur"))state.profile.needs.push("Reparatur");
+ if(/mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|anfragen gewinnen/.test(t))state.profile.goal="mehr qualifizierte Kunden- und Terminanfragen";
+ if(/gesichtsbehandlung|haarentfernung|naegel|wimpern|aesthetik|haut/.test(t))state.profile.service=text;
+ if(/termin/.test(t))state.profile.contactIntent="Termin";
+ if(/beratung/.test(t))state.profile.contactIntent="Beratung";
+ state.profile.answers.push(String(text).trim());
 }
 
-function contextualIndustryResponse(){
- const data=industryResponses[state.industry];
+function packageForIndustry(){
+ if(["BEAUTY","FITNESS","AUTOHAUS","SHK","REAL_ESTATE","CRAFT"].includes(state.industry))return packageGuidance.PRO;
+ return packageGuidance.BASIC+" "+packageGuidance.PRO;
+}
+
+function startQualification(){
+ const data=industryData[state.industry];
  if(!data)return null;
- const leadQuestion=data.flow[0];
- return data.intro+"\n\nCora kann unter anderem:\n• "+data.capabilities.join("\n• ")+"\n\nFür eine echte Demo würde ich aber nicht bei einer Funktionsliste stehen bleiben. Ich würde direkt mit der Qualifizierung beginnen:\n\n"+leadQuestion;
+ state.stage="qualification";state.conversation.leadMode=true;state.conversation.questionIndex=0;
+ return "Für Ihren "+industryLabels[state.industry]+" ist Pro besonders interessant, wenn Cora aktiv aus Besuchern qualifizierte Anfragen entwickeln soll. "+data.intro+
+ "\\n\\nKonkrete Einsatzfälle:\\n• "+data.useCases.join("\\n• ")+
+ "\\n\\nDer Mehrwert: "+data.value+
+ "\\n\\nDamit ich den Einsatz nicht pauschal, sondern anhand Ihres Ziels einordne, starten wir direkt mit der Qualifizierung. "+data.questions[0];
 }
 
-function industryFollowUp(){
- const data=industryResponses[state.industry];
- if(!data)return null;
- const idx=Math.min(Math.max(state.conversation.questionCount,0),data.flow.length-1);
- return data.flow[idx];
+function nextQualification(answer){
+ const data=industryData[state.industry],idx=state.conversation.questionIndex;
+ if(idx===0)state.profile.service=answer;
+ if(idx===1)state.profile.contactIntent=answer;
+ if(idx===2)state.profile.need=answer;
+ if(idx===3)state.profile.timing=answer;
+ state.profile.answers.push(String(answer).trim());
+ state.conversation.questionIndex++;
+ if(state.conversation.questionIndex<data.questions.length){
+  return "Danke. Das macht den Einsatz konkreter. "+data.questions[state.conversation.questionIndex]+
+  "\\n\\nWarum ich das frage: Die Antwort hilft Cora, die Anfrage später mit echtem Kontext statt nur mit Kontaktdaten zu übergeben.";
+ }
+ state.conversation.leadMode=false;state.stage="contact";
+ return "Damit ist aus dem allgemeinen Wunsch bereits eine konkrete Anfrage geworden.\\n\\nCora hat bisher erkannt:\\n• Branche: "+industryLabels[state.industry]+
+ "\\n• Ziel: "+(state.profile.goal||"Kunden-/Anfragengewinnung")+
+ "\\n• Interesse/Leistung: "+(state.profile.service||"erfasst")+
+ "\\n• Bedarf: "+(state.profile.need||"erfasst")+
+ "\\n• Zeitraum: "+(state.profile.timing||"erfasst")+
+ "\\n\\nGenau darin liegt der praktische Mehrwert: Der Besucher wurde nicht einfach auf ein Kontaktformular verwiesen. Cora hat das Anliegen aufgenommen, passende Rückfragen gestellt und den nächsten Schritt vorbereitet. Ihr Team kann dadurch mit mehr Kontext in die Anfrage einsteigen.\\n\\nWenn Sie Cora für Ihren Betrieb einsetzen möchten, starten Sie jetzt die „Cora-Anfrage“. Dort können Sie Unternehmen, E-Mail, Website und weitere Kontaktdaten hinterlassen. Im persönlichen Gespräch wird der tatsächliche Umfang und das passende Paket festgelegt.";
 }
 
-function answerIndustry(q){
- const data=industryResponses[state.industry];
- const t=normalize(q);
- if(!data)return null;
-
- if(/welches paket|welches produkt|was passt|welcher tarif|basic|pro|enterprise|geeignetsten|geeignetste|am besten|empfehl/.test(t)){
-  const asksForHelp=/wie hilft|wie kannst|was kann|was bietet|welchen mehrwert|mehrwert|wie funktioniert|einsatz|nutzen|hilft/.test(t);
-  if(asksForHelp){
-   const label=industryLabels[state.industry]||"Unternehmen";
-   const packageText=state.industry==="BEAUTY"
-    ? "Für einen Kosmetiksalon ist Pro besonders relevant, wenn Cora nicht nur Leistungen erklären, sondern Besucher aktiv zu qualifizierten Termin- oder Beratungsanfragen führen soll. Basic reicht eher dann, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Enterprise wird erst bei komplexeren individuellen Anforderungen interessant."
-    : packageRecommendation(state.industry);
-   return packageText+"\n\n"+data.intro+"\n\nKonkrete Einsatzfälle für Ihren Betrieb:\n• "+data.capabilities.join("\n• ")+"\n\nDer konkrete Mehrwert: Besucher erhalten sofort Orientierung, Cora erkennt ihr Anliegen und fragt gezielt die Informationen ab, die für eine verwertbare Anfrage nötig sind. Ihr Team erhält dadurch bereits strukturierte Angaben, statt bei jedem Kontakt wieder bei null zu beginnen.\n\nDamit ich den Einsatz direkt auf Ihren Betrieb zuschneiden kann: "+data.flow[0];
-  }
-  return packageRecommendation(state.industry);
+function answer(text){
+ state.turns++;remember(text);
+ const t=normalize(text);
+ if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
+ if(!state.industry)return "Damit ich Ihnen nicht pauschal ein Paket nenne: Welche Branche betreiben Sie und was möchten Sie über Ihre Website erreichen – zum Beispiel mehr Termine, mehr Angebotsanfragen oder mehr qualifizierte Kundenkontakte?";
+ const data=industryData[state.industry];
+ if(/welches paket|welcher tarif|basic|pro|enterprise|was passt|geeignet|empfehl/.test(t)){
+  if(/wie hilft|was kann|mehrwert|nutzen|einsatz|mehr kunden|mehr anfragen|mehr termine/.test(t))return startQualification();
+  return packageForIndustry()+"\\n\\nBasic ist sinnvoll, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Pro ist der naheliegende Ausgangspunkt, wenn Cora aktiv Bedarf ermitteln und Leads qualifizieren soll. Enterprise prüfen wir bei komplexeren individuellen Anforderungen.\\n\\nDamit ich es für Ihren Betrieb konkret einordne: "+data.questions[0];
  }
-
- if(/roi|rentabil|rendite|mehrumsatz|umsatz|lohnt sich/.test(t)){
-  return "Ja. Der ROI-Rechner ist auch für Immobilienmakler sinnvoll, wenn Sie ihn als Szenario für zusätzliche qualifizierte Anfragen betrachten. Entscheidend sind vor allem Website-Besucher, aktuelle Anfragequote, Abschlussquote und der durchschnittliche wirtschaftliche Wert einer erfolgreichen Vermittlung.\\n\\nDer Rechner ist keine Umsatzgarantie. Er zeigt rechnerisch, wie sich eine angenommene zusätzliche Anfragequote auf potenzielle Anfragen und Umsatz auswirken kann.\\n\\n→ Öffnen Sie den Bereich „ROI-Rechner“ und tragen Sie Ihre eigenen Werte ein. Wenn Sie möchten, können wir Ihren konkreten Fall danach gemeinsam einordnen.";
- }
- if(/preis|kosten|monatlich|einmalig/.test(t))return responses.PRICE();
-
- if(/dsgvo|datenschutz|daten/.test(t))return responses.PRIVACY();
-
- if(/wie bekomme ich|bekomme ich cora|cora bekommen|cora kaufen|cora buchen|beauftragen|starten/.test(t)){
-  state.stage="contact";
-  return "Wenn Sie Cora für Ihr Immobilienunternehmen einsetzen möchten, starten wir mit Ihrem konkreten Ziel. Das kann zum Beispiel die Gewinnung und Vorqualifizierung von Kaufinteressenten, Mietinteressenten, Besichtigungsanfragen, Eigentümeranfragen oder konkreten Objektanfragen sein.\\n\\nDanach werden Gesprächslogik, relevante Lead-Daten und der gewünschte Übergabeprozess festgelegt.\\n\\nDer nächste Schritt ist jetzt das Formular „Cora anfragen“. Hinterlassen Sie dort Name, Unternehmen, E-Mail, Website und kurz, welche Anfragen Cora für Sie gewinnen oder vorqualifizieren soll. Im persönlichen Gespräch klären wir anschließend den passenden Umfang und das passende Paket.";
- }
-
- if(/integration|crm|kalender|schnittstelle|api|n8n|salesforce|hubspot|pipedrive/.test(t)){
-  return "Je nach gewünschtem Setup können z. B. CRM, Kalender, Formulare oder Automatisierungen angebunden werden. Für "+industryLabels[state.industry]+" wäre entscheidend, wohin qualifizierte Anfragen anschließend gehen sollen.\n\nMögliche Varianten:\n• Anfrage direkt an Ihr Team\n• Formular/Lead-Tabelle\n• CRM-Übergabe\n• Terminprozess\n• individuelle Automatisierung\n\nWelche Systeme oder Prozesse nutzen Sie heute?";
- }
-
- if(/wie|warum|konkret|beispiel|genau|ablauf/.test(t)&&/fragen|gespraech|qualifiz|kunden|interessent|lead|funktion/.test(t)){
-  return "Der Lead-Fokus funktioniert kontextabhängig: Cora gibt zuerst eine kurze Antwort, erkennt danach das Anliegen und stellt nur die nächste sinnvolle Frage. Für "+industryLabels[state.industry]+" kann das so aussehen:\n\n"+data.flow.map((x,i)=>(i+1)+". "+x).join("\n")+"\n\nJe nach Antwort kann Cora Fragen überspringen, vertiefen oder direkt auf Kontaktaufnahme wechseln. Am Ende steht eine strukturierte Anfrage statt eines beliebigen Chatverlaufs.";
- }
-
- if(/mach|spiel|simulier|testen|durchspielen/.test(t)){
-  return startLeadFlow();
- }
-
- if(/lead|anfrage|kontakt|kunden gewinnen|qualifiz/.test(t)){
-  return startLeadFlow();
- }
-
- // Context-sensitive examples give visitors several natural ways to continue.
- const prompts={
-  SHK:"Zum Beispiel können Sie antworten mit: „Wärmepumpe für ein Einfamilienhaus“, „Heizung defekt“, „Badsanierung geplant“ oder „Ich möchte ein Angebot“.",
-  FITNESS:"Zum Beispiel: „Ich möchte abnehmen“, „Ich will ein Probetraining“, „Was kostet die Mitgliedschaft?“ oder „Ich suche Personal Training“.",
-  RESTAURANT:"Zum Beispiel: „Ich möchte für 6 Personen reservieren“, „Wir planen eine Feier“, „Habt ihr vegetarische Optionen?“ oder „Welche Öffnungszeiten habt ihr?“",
-  HOTEL:"Zum Beispiel: „Ich suche ein Doppelzimmer“, „Wir reisen mit Kindern“, „Ich möchte ein Zimmer für ein Wochenende“ oder „Wie funktioniert der Check-in?“",
-  AUTOHAUS:"Zum Beispiel: „Ich interessiere mich für einen BMW“, „Ich möchte eine Probefahrt“, „Ich suche Leasing“ oder „Ich brauche einen Werkstatttermin“.",
-  REAL_ESTATE:"Zum Beispiel: „Ich suche eine Wohnung“, „Ich möchte eine Immobilie kaufen“, „Ich will eine Besichtigung“ oder „Mein Budget liegt bei 400.000 €“.",
-  LAW_FIRM:"Zum Beispiel: „Ich brauche einen Anwalt“, „Es geht um Arbeitsrecht“, „Ich möchte ein Erstgespräch“ oder „Ich möchte zurückgerufen werden“.",
-  DENTAL:"Zum Beispiel: „Ich brauche einen Termin“, „Ich bin Neupatient“, „Ich habe eine allgemeine Frage“ oder „Ich möchte eine Behandlung anfragen“.",
-  TAX_ADVISOR:"Zum Beispiel: „Ich bin Unternehmer“, „Ich brauche Unterstützung bei der Buchhaltung“, „Ich suche einen Steuerberater“ oder „Ich möchte ein Erstgespräch“.",
-  CRAFT:"Zum Beispiel: „Ich brauche einen Elektriker“, „Wir planen eine Renovierung“, „Ich möchte ein Angebot“ oder „Es geht um eine Reparatur“."
- };
- return data.intro+"\n\n"+data.lead+"\n\nSie können frei antworten. "+(prompts[state.industry]||"Beschreiben Sie einfach Ihr Anliegen, Ziel oder Ihre gewünschte Leistung.")+"\n\nWenn echtes Interesse erkennbar ist, wechselt Cora automatisch in die Lead-Qualifizierung.";
+ if(/wie hilft|was kann|mehrwert|nutzen|einsatz|wie funktioniert|anwendungsfall|anwendungsfaelle|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen/.test(t))return startQualification();
+ if(/lead|qualifiz|anfrage|kontakt aufnehmen/.test(t))return startQualification();
+ if(/dsgvo|datenschutz/.test(t))return "Datenschutz muss anhand des konkreten Setups, der verwendeten Anbieter, Datenarten, Speicherorte und Prozesse geprüft werden. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale DSGVO-Rechtsgarantie wäre nicht seriös. Wenn Sie möchten, können wir als Nächstes festlegen, welche Daten Cora überhaupt für Ihre Leads erfassen soll.";
+ if(/integration|crm|kalender|api|n8n|hubspot|salesforce|pipedrive/.test(t))return "Je nach Projekt können Formulare, CRM, Kalender oder Automatisierungen angebunden werden. Entscheidend ist zuerst, wohin eine qualifizierte Anfrage bei Ihnen gehen soll. Welche Systeme oder Prozesse nutzen Sie heute?";
+ if(/preis|kosten|monatlich|einmalig/.test(t))return "Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\\n\\nBasic ist für Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung gedacht. Pro ist für aktive Gesprächsführung und Lead-Qualifizierung ausgelegt. Die endgültige Einordnung erfolgt anhand Ihres konkreten Einsatzes.";
+ if(/beispiel|wie wuerde|wie würde|zeig|testen|simulier/.test(t))return startQualification();
+ return data.intro+"\\n\\nDer relevante nächste Schritt für Ihr Ziel wäre: "+data.questions[0];
 }
 
-const responses={
- PRICE:()=> "Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\n\nBasic passt, wenn Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung im Mittelpunkt stehen. Pro ist umfassender für aktive Gesprächsführung, Lead-Qualifizierung und mehrere Gesprächswege. Enterprise prüfen wir bei komplexen individuellen Anforderungen. Die genaue Einordnung erfolgt am besten im kurzen Beratungsgespräch.",
- FEATURES:()=> state.industry?contextualIndustryResponse():"Cora beantwortet nicht nur FAQs. Sie kann Unternehmenswissen erklären, Anliegen erkennen, Gespräche führen, Rückfragen stellen, Interessenten qualifizieren und – je nach Setup – strukturierte Leads an den gewünschten Prozess übergeben.",
- LEAD:()=> state.industry?answerIndustry("lead"): "Cora kann Interessenten Schritt für Schritt qualifizieren: Anliegen erkennen, relevante Rückfragen stellen, Kontaktdaten aufnehmen und die Anfrage strukturiert weitergeben.",
- SETUP:()=> "Der Prozess läuft typischerweise in sechs Schritten: 1. Website und Ziel prüfen. 2. Leistungen, FAQ und Unternehmenswissen strukturieren. 3. Gesprächslogik und Lead-Felder festlegen. 4. Cora konfigurieren und testen. 5. Auf der Website einbinden. 6. Nach dem Start Gespräche und Leads auswerten und den Ablauf optimieren.",
- HOW_IT_WORKS:()=> state.industry?("Cora arbeitet für ein "+industryLabels[state.industry]+" als dialogorientierter Webassistent. Sie berücksichtigt den bisherigen Gesprächskontext, beantwortet zuerst das konkrete Anliegen und stellt danach nur die nächste sinnvolle Frage. So kann aus einer allgemeinen Frage schrittweise eine qualifizierte Anfrage werden.\n\nDer Ablauf ist: Anliegen erkennen → passend antworten → Bedarf konkretisieren → relevante Lead-Daten erfassen → Anfrage zusammenfassen → Kontaktaufnahme vorbereiten."):"Cora arbeitet als dialogorientierter Webassistent. Sie ordnet die Nachricht ein, berücksichtigt den bisherigen Gesprächskontext, antwortet passend zum Unternehmen und entscheidet, ob eine Information, Rückfrage oder Lead-Qualifizierung als nächster Schritt sinnvoll ist.",
- PRIVACY:()=> "Datenschutz hängt vom konkreten Einsatz, den Daten, Anbietern, Speicherorten und der technischen Integration ab. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale Rechtsgarantie wäre nicht seriös.",
- INTEGRATIONS:()=> "Je nach Projekt können Formulare, CRM, Kalender und Automatisierungsprozesse angebunden werden. Diese Demo behauptet keine Schnittstelle als aktiv, wenn sie nicht tatsächlich implementiert ist.",
- PURCHASE:()=> "Wenn Sie Cora ernsthaft einsetzen möchten, ist der nächste sinnvolle Schritt ein kurzes Beratungsgespräch. Dabei klären wir Website, Branche, Ziele, gewünschte Lead-Daten und den passenden Umfang. Wenn Sie mir Name, Unternehmen, E-Mail und Website hinterlassen, kann die Anfrage direkt strukturiert weiterbearbeitet werden.",
- CONTACT:()=> "Der schnellste nächste Schritt ist ein kurzes Beratungsgespräch. Hinterlassen Sie dafür im Anfrageformular Name, Unternehmen, E-Mail, Website und Ihr Ziel mit Cora. So können wir bereits vor dem Gespräch einschätzen, ob Basic, Pro oder ein individueller Enterprise-Aufbau sinnvoll ist.",
- INDUSTRIES:()=> "Cora lässt sich auf unterschiedliche Geschäftsmodelle zuschneiden, unter anderem Fitness, SHK, Handwerk, Gastronomie, Hotels, Autohäuser, Immobilien, Kanzleien, Praxen und Steuerberatung."
-};
-
-function getAnswer(q){
- state.turns++;
- extractProfile(q);
- const intent=detectIntent(q);
- state.lastIntent=intent;
-
- if(state.conversation.packageMode&&state.industry==="SHK"){
-  const t=normalize(q);
-  if(!/preis|kosten|dsgvo|datenschutz|integration|setup|einrichten/.test(t)){
-   const n=state.conversation.packageQuestionCount++;
-   if(n===2) return "Danke. Das hilft.\n\n2. Was soll Cora auf Ihrer Website hauptsächlich übernehmen: eher FAQs und einfache Anfragen oder aktiv Leads qualifizieren, Projekte vorsortieren und Rückruf-/Angebotsanfragen vorbereiten?";
-   if(n===3) return "Verstanden.\n\n3. Brauchen Sie Anbindungen an bestehende Systeme, zum Beispiel CRM, Kalender, Formulare oder andere interne Prozesse?";
-   state.conversation.packageMode=false;
-   state.stage="discovery";
-   state.profile.goal="Paket-/Einsatzqualifizierung";
-   return "Auf Basis Ihrer Angaben lässt sich der Einsatz jetzt konkret besprechen. Ich würde daraus noch keine automatische Kaufentscheidung ableiten. Basic ist für einen schlankeren Webchat mit Unternehmenswissen, FAQs und einfacher Lead-Erfassung gedacht. Pro ist umfassender für aktive Gesprächsführung, Qualifizierung und mehrere Gesprächswege. Enterprise kommt bei individuellen, komplexeren Strukturen infrage.\\n\\nIhre bisherige Einordnung kann im Anfrageformular direkt weitergegeben werden. Klicken Sie dort auf „Cora anfragen“ und hinterlassen Sie Name, Unternehmen, E-Mail und kurz Ihren gewünschten Einsatz. Im anschließenden Gespräch können wir den tatsächlichen Umfang gemeinsam festlegen.";
-  }
- }
- if(state.conversation.leadMode&&state.industry){
-  const t=normalize(q);
-  if(!/preis|kosten|dsgvo|datenschutz|integration|setup|einrichten/.test(t)){
-   const data=industryResponses[state.industry];
-   const idx=state.conversation.questionCount++;
-   if(idx<data.flow.length){
-    return "Danke. Das hilft bei der Einordnung. "+data.flow[idx];
-   }
-   state.conversation.leadMode=false;
-   return "Damit ist die Anfrage bereits deutlich konkreter. Cora würde die gesammelten Angaben jetzt als strukturierten Interessenten-Lead weitergeben. Sie können noch nach Preisen, Datenschutz, Integration oder dem konkreten Cora-Setup fragen.";
-  }
- }
-
- if(state.industry && /wie funktioniert|wie laeuft|ablauf|prozess/.test(normalize(q))){
-  const data=industryResponses[state.industry];
-  if(data){
-   return "Für "+industryLabels[state.industry]+" würde ich den Ablauf nicht mit einer allgemeinen Funktionsliste beginnen. Cora reagiert zuerst auf das konkrete Anliegen, gibt eine kurze fachlich passende Antwort und stellt anschließend genau die nächste Frage, die für die Anfrage relevant ist.\\n\\nTypischer Ablauf:\\n1. Anliegen erkennen\\n2. Relevante Information geben\\n3. Bedarf mit 1–2 gezielten Rückfragen konkretisieren\\n4. Nur notwendige Angaben für den Lead erfassen\\n5. Anfrage zusammenfassen\\n6. Kontaktaufnahme über das Anfrageformular auslösen\\n\\nFür Ihr Unternehmen können Sie jetzt direkt mit einem konkreten Fall starten. Beispiel: „Ich interessiere mich für ein Fahrzeug und möchte wissen, was für mich infrage kommt.“";
-  }
- }
- if(industryLabels[intent]){
-  state.industry=intent;
-  if(/wie kannst|was kannst|was kann|was bietest|was bietet|hilfst du|hilfe|für mein unternehmen|fuer mein unternehmen/.test(normalize(q)))return contextualIndustryResponse();
-  return answerIndustry(q);
- }
- if(intent==="FEATURES"&&state.industry)return contextualIndustryResponse();
- if(intent==="LEAD"&&state.industry)return answerIndustry(q);
- if(intent==="PRICE")return responses.PRICE();
- if(responses[intent])return responses[intent]();
- if(state.industry)return contextualIndustryResponse();
-
- return "Gerne. Wir können das direkt auf Ihr Unternehmen zuschneiden. Wenn Sie mir kurz Branche, Ziel und die Art von Anfragen nennen, die Sie über Ihre Website gewinnen möchten, kann ich passende Anwendungsfälle nennen und anschließend direkt mit der Lead-Qualifizierung beginnen.\n\nZum Beispiel bei einem Kosmetiksalon: Cora kann Interessenten zu Behandlungen führen, Wünsche und Bedarf erfassen, passende Leistungen einordnen, Termin- oder Beratungskontakte vorbereiten und am Ende die Kontaktdaten für einen verwertbaren Lead aufnehmen. Der Mehrwert: Der Website-Besucher bekommt sofort Orientierung, während Ihr Salon bereits vor dem persönlichen Kontakt weiß, wonach der Interessent sucht.\n\nDamit wir es konkret machen: Welche Leistungen möchten Sie über Ihre Website besonders häufig verkaufen oder welche Anfragen möchten Sie gewinnen?";
-}
-
-
-function addDemoMessage(text,type,cta){
+function addMessage(text,type,cta){
  if(!demoMessages)return;
- const wrap=document.createElement("div");
- wrap.className="msg "+type;
- const el=document.createElement("div");
- el.textContent=text;
- wrap.appendChild(el);
- if(cta){
-  const button=document.createElement("button");
-  button.type="button";
-  button.className="demo-cta";
-  button.textContent=cta.label;
-  button.addEventListener("click",()=>document.getElementById("kontakt")?.scrollIntoView({behavior:"smooth",block:"start"}));
-  wrap.appendChild(button);
- }
- demoMessages.appendChild(wrap);
- demoMessages.scrollTop=demoMessages.scrollHeight;
+ const wrap=document.createElement("div");wrap.className="msg "+type;
+ const body=document.createElement("div");body.textContent=text;wrap.appendChild(body);
+ if(cta){const b=document.createElement("button");b.type="button";b.className="demo-cta";b.textContent=cta;b.addEventListener("click",()=>$("kontakt")?.scrollIntoView({behavior:"smooth",block:"start"}));wrap.appendChild(b);}
+ demoMessages.appendChild(wrap);demoMessages.scrollTop=demoMessages.scrollHeight;
 }
 
-function runDemo(q){
- q=String(q||"").trim();
- if(!q||!demoMessages)return;
- addDemoMessage(q,"user");
- setTimeout(()=>{
-  const answer=getAnswer(q);
-  const wantsForm=/anfrageformular|cora anfragen|hinterlassen sie name|kontaktformular/.test(normalize(answer));
-  addDemoMessage(answer,"cora",wantsForm?{label:"Cora-Anfrage starten"}:null);
-  if(wantsForm) state.profile.goal=state.profile.goal||"Lead-Anfrage";
- },320);
+function runDemo(text){
+ text=String(text||"").trim();if(!text)return;
+ addMessage(text,"user");
+ setTimeout(()=>{const result=answer(text);const cta=/cora.?anfrage|anfrage.*formular|hinterlassen.*kontaktdaten/i.test(result);addMessage(result,"cora",cta?"Cora-Anfrage starten":null);},220);
 }
 
-document.querySelectorAll("[data-prompt]").forEach(btn=>{
- btn.addEventListener("click",()=>runDemo(btn.dataset.prompt));
-});
-
-const demoSend=document.getElementById("demoSend");
-function submitDemoQuestion(event){
- if(event){
-  event.preventDefault();
-  event.stopPropagation();
-  if(event.stopImmediatePropagation)event.stopImmediatePropagation();
- }
- const value=demoInput?.value||"";
- if(!value.trim()||!demoMessages)return;
- if(demoSend)demoSend.disabled=true;
- demoInput.value="";
- runDemo(value);
- setTimeout(()=>{
-  if(demoSend)demoSend.disabled=false;
-  demoInput?.focus({preventScroll:true});
- },450);
-}
-window.coraSubmitDemoQuestion=submitDemoQuestion;
-demoSend?.addEventListener("click",submitDemoQuestion);
-demoInput?.addEventListener("keydown",e=>{
- if(e.key==="Enter"){
-  submitDemoQuestion(e);
- }
-});
-
-const roiEls={
- visitors:document.getElementById("roiVisitors"),rate:document.getElementById("roiRate"),close:document.getElementById("roiClose"),
- value:document.getElementById("roiValue"),lift:document.getElementById("roiLift"),liftValue:document.getElementById("roiLiftValue"),
- leads:document.getElementById("roiLeads"),revenue:document.getElementById("roiRevenue"),year:document.getElementById("roiYear"),cta:document.getElementById("roiCta")
+window.coraSubmitDemoQuestion=function(event){
+ if(event){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation?.();}
+ const value=demoInput?.value||"";if(!value.trim())return;
+ if(demoSend)demoSend.disabled=true;demoInput.value="";runDemo(value);
+ setTimeout(()=>{if(demoSend)demoSend.disabled=false;demoInput?.focus({preventScroll:true});},400);
 };
+demoSend?.addEventListener("click",window.coraSubmitDemoQuestion);
+demoInput?.addEventListener("keydown",e=>{if(e.key==="Enter")window.coraSubmitDemoQuestion(e);});
+document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>runDemo(b.dataset.prompt)));
+
+const menuBtn=$("menuBtn"),mobileNav=$("mobileNav");
+if(menuBtn&&mobileNav){menuBtn.addEventListener("click",()=>{const open=mobileNav.classList.toggle("open");menuBtn.setAttribute("aria-expanded",String(open));menuBtn.setAttribute("aria-label",open?"Menü schließen":"Menü öffnen");});mobileNav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>mobileNav.classList.remove("open")));}
+document.querySelectorAll("[data-scroll-demo]").forEach(b=>b.addEventListener("click",()=>$("demo")?.scrollIntoView({behavior:"smooth",block:"start"})));
+
+const roiEls={visitors:$("roiVisitors"),rate:$("roiRate"),close:$("roiClose"),value:$("roiValue"),lift:$("roiLift"),liftValue:$("roiLiftValue"),leads:$("roiLeads"),revenue:$("roiRevenue"),year:$("roiYear"),cta:$("roiCta")};
 function euro(n){return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Math.max(0,n));}
 function updateROI(){
  if(!roiEls.visitors)return;
- const visitors=Math.max(0,Number(roiEls.visitors.value)||0);
- const rate=Math.max(0,Number(roiEls.rate.value)||0)/100;
- const close=Math.max(0,Number(roiEls.close.value)||0)/100;
- const value=Math.max(0,Number(roiEls.value.value)||0);
- const lift=Math.max(0,Number(roiEls.lift.value)||0)/100;
- const extraLeads=visitors*lift;
- const extraRevenue=extraLeads*close*value;
+ const visitors=Number(roiEls.visitors.value)||0,close=(Number(roiEls.close?.value)||0)/100,value=Number(roiEls.value?.value)||0,lift=(Number(roiEls.lift?.value)||0)/100;
+ const extraLeads=visitors*lift,extraRevenue=extraLeads*close*value;
  if(roiEls.leads)roiEls.leads.textContent=extraLeads.toFixed(1).replace(".",",");
  if(roiEls.revenue)roiEls.revenue.textContent=euro(extraRevenue);
  if(roiEls.year)roiEls.year.textContent=euro(extraRevenue*12);
  if(roiEls.liftValue)roiEls.liftValue.textContent="+"+(lift*100).toFixed(1).replace(".",",")+" %-Punkte";
- if(roiEls.cta){
-  roiEls.cta.onclick=()=>{
-   const msg=document.querySelector('[name="message"]');
-   if(msg)msg.value="Ich habe den Cora ROI-Rechner genutzt. Website-Besucher/Monat: "+visitors+" | Anfragequote aktuell: "+(rate*100).toFixed(1)+"% | Abschlussquote: "+(close*100).toFixed(1)+"% | Auftragswert: "+euro(value)+" | Szenario: +"+(lift*100).toFixed(1)+" Prozentpunkte. Ich möchte dazu ein Beratungsgespräch.";
-  };
- }
+ if(roiEls.cta)roiEls.cta.onclick=()=>{const msg=document.querySelector('[name="message"]');if(msg)msg.value="Ich habe den Cora ROI-Rechner genutzt. Website-Besucher/Monat: "+visitors+" | Anfragequote: "+(Number(roiEls.rate?.value)||0)+"% | Abschlussquote: "+(Number(roiEls.close?.value)||0)+"% | Auftragswert: "+euro(value)+" | Szenario: +"+(lift*100).toFixed(1)+" Prozentpunkte. Ich möchte dazu ein Beratungsgespräch."; $("kontakt")?.scrollIntoView({behavior:"smooth",block:"start"});};
 }
-[roiEls.visitors,roiEls.rate,roiEls.close,roiEls.value,roiEls.lift].forEach(el=>el?.addEventListener("input",updateROI));
-updateROI();
+[roiEls.visitors,roiEls.rate,roiEls.close,roiEls.value,roiEls.lift].forEach(el=>el?.addEventListener("input",updateROI));updateROI();
 
-const leadForm=document.getElementById("leadForm"),status=document.getElementById("formStatus");
+const leadForm=$("leadForm"),status=$("formStatus");
 leadForm?.addEventListener("submit",async e=>{
- e.preventDefault();
- if(!leadForm.reportValidity())return;
- const hp=leadForm.querySelector('[name="website_check"]');
- if(hp?.value)return;
- const button=leadForm.querySelector('button[type="submit"]');
- const original=button?.innerHTML;
+ e.preventDefault();if(!leadForm.reportValidity())return;
+ const hp=leadForm.querySelector('[name="website_check"]');if(hp?.value)return;
+ const button=leadForm.querySelector('button[type="submit"]'),original=button?.innerHTML;
  if(button){button.disabled=true;button.innerHTML="Wird übermittelt …";}
- if(status){status.className="form-status";status.textContent="";}
- const data=new URLSearchParams();
- new FormData(leadForm).forEach((value,key)=>data.append(key,String(value)));
- data.append("source","Cora Website");
- data.append("page",window.location.href);
- data.append("submitted_at_client",new Date().toISOString());
  try{
-  await fetch(APPS_SCRIPT_URL,{method:"POST",mode:"no-cors",body:data});
-  leadForm.reset();
+  const data=new URLSearchParams();new FormData(leadForm).forEach((value,key)=>data.append(key,String(value)));
+  data.append("source","Cora Website");data.append("page",window.location.href);data.append("submitted_at_client",new Date().toISOString());
+  await fetch(APPS_SCRIPT_URL,{method:"POST",mode:"no-cors",body:data});leadForm.reset();
   if(status){status.className="form-status success";status.textContent="Ihre Anfrage wurde übermittelt. Vielen Dank.";}
- }catch(error){
-  console.error(error);
-  if(status){status.className="form-status error";status.textContent="Die Anfrage konnte gerade nicht übermittelt werden. Bitte versuchen Sie es erneut.";}
- }finally{
-  if(button){button.disabled=false;button.innerHTML=original||"Cora anfragen";}
- }
+ }catch(err){console.error(err);if(status){status.className="form-status error";status.textContent="Die Anfrage konnte gerade nicht übermittelt werden. Bitte versuchen Sie es erneut.";}}
+ finally{if(button){button.disabled=false;button.innerHTML=original||"Cora anfragen";}}
 });
 })();
