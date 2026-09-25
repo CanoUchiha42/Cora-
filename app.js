@@ -134,9 +134,20 @@ function startQualification(){
 }\n\nfunction answer(text){
  state.turns++;remember(text);
  const t=normalize(text);
+
+ // Once Cora knows the visitor's industry and commercial goal, route into
+ // the contextual sales flow before generic FAQ/lead answers. This prevents
+ // the same generic "Cora can collect leads" response from repeating.
+ if(state.industry && state.profile.goal && !state.conversation.leadMode &&
+    /lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t) &&
+    !/preis|kosten|dsgvo|datenschutz|integration|crm|wie funktioniert.*integration/.test(t)){
+   return startQualification();
+ }
+
+ if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
+
  const direct=directAnswer(text);
  if(direct && !state.conversation.leadMode)return direct;
- if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
  if(!state.industry){
   if(state.profile.goal){
    return "Ich habe Ihr Ziel bereits verstanden: mehr qualifizierte Kundenkontakte. Ich brauche dafür nicht dieselbe Angabe noch einmal.\n\nWelche Branche bzw. welches konkrete Geschäftsmodell soll Cora auf Ihrer Website unterstützen? Ein kurzer Begriff reicht, z. B. Mobilfunk-Großhandel, Autohaus, Kanzlei, Fitnessstudio oder Handwerksbetrieb.";
