@@ -135,12 +135,12 @@ function startQualification(){
  state.turns++;remember(text);
  const t=normalize(text);
 
- // Once Cora knows the visitor's industry and commercial goal, route into
- // the contextual sales flow before generic FAQ/lead answers. This prevents
- // the same generic "Cora can collect leads" response from repeating.
- if(state.industry && state.profile.goal && !state.conversation.leadMode &&
-    /lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t) &&
-    !/preis|kosten|dsgvo|datenschutz|integration|crm|wie funktioniert.*integration/.test(t)){
+ // Commercial intent must always win over generic FAQ routing once
+ // industry + lead goal are known. This also handles short follow-ups such
+ // as "lead sammeln", "mehr leads" or "lead sammlen".
+ const hasLeadGoal=/lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t);
+ const isNonLeadTopic=/preis|kosten|dsgvo|datenschutz|integration|crm|wie funktioniert.*integration/.test(t);
+ if(state.industry && state.profile.goal && !state.conversation.leadMode && hasLeadGoal && !isNonLeadTopic){
    return startQualification();
  }
 
