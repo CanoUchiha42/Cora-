@@ -298,7 +298,7 @@ function getAnswer(q){
  if(responses[intent])return responses[intent]();
  if(state.industry)return contextualIndustryResponse();
 
- return "Beschreiben Sie einfach Ihr Unternehmen und eine echte Situation. Zum Beispiel: „Ich leite ein Fitnessstudio und möchte mehr Probetrainings über meine Website gewinnen.“ Cora kann anschließend zeigen, welche Fragen sie stellen und wie daraus eine qualifizierte Anfrage entsteht.";
+ return "Gerne. Wir können das direkt auf Ihr Unternehmen zuschneiden. Wenn Sie mir kurz Branche, Ziel und die Art von Anfragen nennen, die Sie über Ihre Website gewinnen möchten, kann ich passende Anwendungsfälle nennen und anschließend direkt mit der Lead-Qualifizierung beginnen.\n\nZum Beispiel bei einem Kosmetiksalon: Cora kann Interessenten zu Behandlungen führen, Wünsche und Bedarf erfassen, passende Leistungen einordnen, Termin- oder Beratungskontakte vorbereiten und am Ende die Kontaktdaten für einen verwertbaren Lead aufnehmen. Der Mehrwert: Der Website-Besucher bekommt sofort Orientierung, während Ihr Salon bereits vor dem persönlichen Kontakt weiß, wonach der Interessent sucht.\n\nDamit wir es konkret machen: Welche Leistungen möchten Sie über Ihre Website besonders häufig verkaufen oder welche Anfragen möchten Sie gewinnen?";
 }
 
 
