@@ -193,9 +193,17 @@ function answerIndustry(q){
   return packageRecommendation(state.industry);
  }
 
+ if(/roi|rentabil|rendite|mehrumsatz|umsatz|lohnt sich/.test(t)){
+  return "Ja. Der ROI-Rechner ist auch für Immobilienmakler sinnvoll, wenn Sie ihn als Szenario für zusätzliche qualifizierte Anfragen betrachten. Entscheidend sind vor allem Website-Besucher, aktuelle Anfragequote, Abschlussquote und der durchschnittliche wirtschaftliche Wert einer erfolgreichen Vermittlung.\\n\\nDer Rechner ist keine Umsatzgarantie. Er zeigt rechnerisch, wie sich eine angenommene zusätzliche Anfragequote auf potenzielle Anfragen und Umsatz auswirken kann.\\n\\n→ Öffnen Sie den Bereich „ROI-Rechner“ und tragen Sie Ihre eigenen Werte ein. Wenn Sie möchten, können wir Ihren konkreten Fall danach gemeinsam einordnen.";
+ }
  if(/preis|kosten|monatlich|einmalig/.test(t))return responses.PRICE();
 
  if(/dsgvo|datenschutz|daten/.test(t))return responses.PRIVACY();
+
+ if(/wie bekomme ich|bekomme ich cora|cora bekommen|cora kaufen|cora buchen|beauftragen|starten/.test(t)){
+  state.stage="contact";
+  return "Wenn Sie Cora für Ihr Immobilienunternehmen einsetzen möchten, starten wir mit Ihrem konkreten Ziel. Das kann zum Beispiel die Gewinnung und Vorqualifizierung von Kaufinteressenten, Mietinteressenten, Besichtigungsanfragen, Eigentümeranfragen oder konkreten Objektanfragen sein.\\n\\nDanach werden Gesprächslogik, relevante Lead-Daten und der gewünschte Übergabeprozess festgelegt.\\n\\nDer nächste Schritt ist jetzt das Formular „Cora anfragen“. Hinterlassen Sie dort Name, Unternehmen, E-Mail, Website und kurz, welche Anfragen Cora für Sie gewinnen oder vorqualifizieren soll. Im persönlichen Gespräch klären wir anschließend den passenden Umfang und das passende Paket.";
+ }
 
  if(/integration|crm|kalender|schnittstelle|api|n8n|salesforce|hubspot|pipedrive/.test(t)){
   return "Je nach gewünschtem Setup können z. B. CRM, Kalender, Formulare oder Automatisierungen angebunden werden. Für "+industryLabels[state.industry]+" wäre entscheidend, wohin qualifizierte Anfragen anschließend gehen sollen.\n\nMögliche Varianten:\n• Anfrage direkt an Ihr Team\n• Formular/Lead-Tabelle\n• CRM-Übergabe\n• Terminprozess\n• individuelle Automatisierung\n\nWelche Systeme oder Prozesse nutzen Sie heute?";
