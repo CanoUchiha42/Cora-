@@ -134,7 +134,7 @@ function answer(text){
   return "Damit ich Ihnen nicht pauschal ein Paket nenne: Welche Branche betreiben Sie und was möchten Sie über Ihre Website erreichen – zum Beispiel mehr Termine, mehr Angebotsanfragen oder mehr qualifizierte Kundenkontakte?";
  }
  const data=industryData[state.industry];
- if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)) return responseForKnownGoal();
+ if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)) return startQualification();
  if(/welches paket|welcher tarif|basic|pro|enterprise|was passt|geeignet|empfehl/.test(t)){
   if(/wie hilft|was kann|mehrwert|nutzen|einsatz|mehr kunden|mehr anfragen|mehr termine/.test(t))return startQualification();
   return packageForIndustry()+"\\n\\nBasic ist sinnvoll, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Pro ist der naheliegende Ausgangspunkt, wenn Cora aktiv Bedarf ermitteln und Leads qualifizieren soll. Enterprise prüfen wir bei komplexeren individuellen Anforderungen.\\n\\nDamit ich es für Ihren Betrieb konkret einordne: "+data.questions[0];
