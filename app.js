@@ -3,7 +3,7 @@
 const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbzDrLyFEsCVSVqLphU7fiCrNo_slakHFf6R8JSHvqT-5Lr6Y5uxyBQbNshS0uzUXSHa/exec";
 const $=id=>document.getElementById(id);
 const demoMessages=$("demoMessages"),demoInput=$("demoInput"),demoSend=$("demoSend");
-const STATE_KEY="cora_demo_state_v3";
+const STATE_KEY="cora_demo_state_v4";
 const state={industry:null,turns:0,stage:"discovery",profile:{goal:null,service:null,need:null,location:null,timing:null,contactIntent:null,answers:[]},conversation:{leadMode:false,questionIndex:0}};
 function restoreState(){
  try{
@@ -163,46 +163,80 @@ function nextQualification(answer){
 }
 
 function answer(text){
- state.turns++;remember(text);
+ state.turns++;
+ remember(text);
  const t=normalize(text);
- const hasLeadGoal=/lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t);
- const isNonLeadTopic=/preis|kosten|dsgvo|datenschutz|integration|crm|wie funktioniert.*integration/.test(t);
+ const hasLeadIntent=/lead|kundenkontakt|kunden gewinnen|mehr kunden|mehr anfragen|qualifiz/.test(t);
+ const nonLeadTopic=/preis|kosten|dsgvo|datenschutz|integration|crm|wie funktioniert.*integration/.test(t);
 
- // Once a commercial lead goal is known, keep the demo in the qualification flow.
- // This deliberately takes precedence over generic FAQ answers.
- if(state.industry && state.profile.goal && !isNonLeadTopic && (hasLeadGoal || state.conversation.leadMode)){
-   const result=state.conversation.leadMode ? nextQualification(text) : startQualification();
+ const finish=(result)=>{
    persistState();
    return result;
+ };
+
+ // Explicit commercial intent has priority over generic FAQ answers.
+ // A short follow-up such as "lead sammeln" must never be consumed
+ // as the answer to a qualification question.
+ if(state.industry && state.profile.goal && hasLeadIntent && !nonLeadTopic){
+   return finish(startQualification());
  }
 
- if(state.conversation.leadMode&&state.industry&&!/preis|kosten|dsgvo|datenschutz|integration|crm/.test(t))return nextQualification(text);
+ // Continue an active qualification dialog for normal answers.
+ if(state.conversation.leadMode && state.industry && !nonLeadTopic){
+   return finish(nextQualification(text));
+ }
 
  const direct=directAnswer(text);
- if(direct && !state.conversation.leadMode)return direct;
- if(!state.industry){
-  if(state.profile.goal){
-   return "Ich habe Ihr Ziel bereits verstanden: mehr qualifizierte Kundenkontakte. Ich brauche dafür nicht dieselbe Angabe noch einmal.\n\nWelche Branche bzw. welches konkrete Geschäftsmodell soll Cora auf Ihrer Website unterstützen? Ein kurzer Begriff reicht, z. B. Mobilfunk-Großhandel, Autohaus, Kanzlei, Fitnessstudio oder Handwerksbetrieb.";
-  }
-  return "Was möchten Sie über Ihre Website erreichen – mehr qualifizierte Kundenkontakte, mehr Termine, mehr Angebotsanfragen oder etwas anderes? Und in welcher Branche sind Sie tätig?";
+ if(direct){
+   return finish(direct);
  }
- const data=industryData[state.industry];
- if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr lead|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)) return startQualification();
- if(/welches paket|welcher tarif|basic|pro|enterprise|was passt|geeignet|empfehl/.test(t)){
-  if(/wie hilft|was kann|mehrwert|nutzen|einsatz|mehr kunden|mehr anfragen|mehr termine/.test(t))return startQualification();
-  return packageForIndustry()+"\\n\\nBasic ist sinnvoll, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Pro ist der naheliegende Ausgangspunkt, wenn Cora aktiv Bedarf ermitteln und Leads qualifizieren soll. Enterprise prüfen wir bei komplexeren individuellen Anforderungen.\\n\\nDamit ich es für Ihren Betrieb konkret einordne: "+data.questions[0];
- }
- if(/wie hilft|was kann|mehrwert|nutzen|einsatz|wie funktioniert|anwendungsfall|anwendungsfaelle|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen/.test(t))return startQualification();
- if(/lead|qualifiz|anfrage|kontakt aufnehmen/.test(t))return state.profile.goal?responseForKnownGoal():startQualification();
- if(/dsgvo|datenschutz/.test(t))return "Datenschutz muss anhand des konkreten Setups, der verwendeten Anbieter, Datenarten, Speicherorte und Prozesse geprüft werden. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale DSGVO-Rechtsgarantie wäre nicht seriös. Wenn Sie möchten, können wir als Nächstes festlegen, welche Daten Cora überhaupt für Ihre Leads erfassen soll.";
- if(/integration|crm|kalender|api|n8n|hubspot|salesforce|pipedrive/.test(t))return "Je nach Projekt können Formulare, CRM, Kalender oder Automatisierungen angebunden werden. Entscheidend ist zuerst, wohin eine qualifizierte Anfrage bei Ihnen gehen soll. Welche Systeme oder Prozesse nutzen Sie heute?";
- if(/preis|kosten|monatlich|einmalig/.test(t))return "Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\\n\\nBasic ist für Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung gedacht. Pro ist für aktive Gesprächsführung und Lead-Qualifizierung ausgelegt. Die endgültige Einordnung erfolgt anhand Ihres konkreten Einsatzes.";
- if(/beispiel|wie wuerde|wie würde|zeig|testen|simulier/.test(t))return startQualification();
- const result=data.intro+"\\n\\nDer relevante nächste Schritt für Ihr Ziel wäre: "+data.questions[0];
- persistState();
- return result;
-}
 
+ if(!state.industry){
+   if(state.profile.goal){
+     return finish("Ihr Ziel ist bereits klar: mehr qualifizierte Kundenkontakte. Welche Branche bzw. welches konkrete Geschäftsmodell soll Cora auf Ihrer Website unterstützen? Ein kurzer Begriff reicht, z. B. Mobilfunk-Großhandel, Autohaus, Kanzlei, Fitnessstudio oder Handwerksbetrieb.");
+   }
+   return finish("Was möchten Sie über Ihre Website erreichen – mehr qualifizierte Kundenkontakte, mehr Termine, mehr Angebotsanfragen oder etwas anderes? Und in welcher Branche sind Sie tätig?");
+ }
+
+ const data=industryData[state.industry];
+
+ if(state.profile.goal && /kundenkontakte|qualifiz|kunden gewinnen|mehr kunden|mehr lead|mehr leads|mehr anfragen/.test(t) && !/welches paket|welcher tarif|basic|pro|enterprise/.test(t)){
+   return finish(startQualification());
+ }
+
+ if(/welches paket|welcher tarif|basic|pro|enterprise|was passt|geeignet|empfehl/.test(t)){
+   if(/wie hilft|was kann|mehrwert|nutzen|einsatz|mehr kunden|mehr anfragen|mehr termine/.test(t)){
+     return finish(startQualification());
+   }
+   return finish(packageForIndustry()+"\n\nBasic ist sinnvoll, wenn hauptsächlich Informationen, FAQs und einfache Anfragen im Mittelpunkt stehen. Pro ist für aktive Gesprächsführung und Lead-Qualifizierung ausgelegt. Enterprise prüfen wir bei komplexeren individuellen Anforderungen.\n\nDamit ich den Einsatz konkret einordnen kann: "+data.questions[0]);
+ }
+
+ if(/wie hilft|was kann|mehrwert|nutzen|einsatz|wie funktioniert|anwendungsfall|anwendungsfaelle|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen/.test(t)){
+   return finish(startQualification());
+ }
+
+ if(/lead|qualifiz|anfrage|kontakt aufnehmen/.test(t)){
+   return finish(state.profile.goal?responseForKnownGoal():startQualification());
+ }
+
+ if(/dsgvo|datenschutz/.test(t)){
+   return finish("Datenschutz muss anhand des konkreten Setups, der verwendeten Anbieter, Datenarten, Speicherorte und Prozesse geprüft werden. Cora kann datenschutzorientiert konfiguriert werden; eine pauschale DSGVO-Rechtsgarantie wäre nicht seriös. Wenn Sie möchten, können wir als Nächstes festlegen, welche Daten Cora überhaupt für Ihre Leads erfassen soll.");
+ }
+
+ if(/integration|crm|kalender|api|n8n|hubspot|salesforce|pipedrive/.test(t)){
+   return finish("Je nach Projekt können Formulare, CRM, Kalender oder Automatisierungen angebunden werden. Entscheidend ist zuerst, wohin eine qualifizierte Anfrage bei Ihnen gehen soll. Welche Systeme oder Prozesse nutzen Sie heute?");
+ }
+
+ if(/preis|kosten|monatlich|einmalig/.test(t)){
+   return finish("Cora Basic: 895 € einmalig + 495 €/Monat. Cora Pro: 1.495 € einmalig + 895 €/Monat. Enterprise: individuell.\n\nBasic ist für Webchat, Unternehmenswissen, FAQs und einfache Lead-Erfassung gedacht. Pro ist für aktive Gesprächsführung und Lead-Qualifizierung ausgelegt. Die endgültige Einordnung erfolgt anhand Ihres konkreten Einsatzes.");
+ }
+
+ if(/beispiel|wie wuerde|zeig|testen|simulier/.test(t)){
+   return finish(startQualification());
+ }
+
+ return finish(data.intro+"\n\nDer relevante nächste Schritt für Ihr Ziel wäre: "+data.questions[0]);
+}
 function addMessage(text,type,cta){
  if(!demoMessages)return;
  const wrap=document.createElement("div");wrap.className="msg "+type;
@@ -213,30 +247,57 @@ function addMessage(text,type,cta){
 
 function runDemo(text){
  text=String(text||"").trim();
- if(!text)return;
+ if(!text||demoSend?.disabled)return;
  addMessage(text,"user");
  if(demoSend)demoSend.disabled=true;
+
+ let result;
  try{
-  const result=answer(text);
-  const cta=/cora.?anfrage|anfrage.*formular|hinterlassen.*kontaktdaten/i.test(result);
-  setTimeout(()=>addMessage(result,"cora",cta?"Cora-Anfrage starten":null),180);
+   result=answer(text);
  }catch(err){
-  console.error("Cora demo error:",err);
-  setTimeout(()=>addMessage("Entschuldigung. Die Demo konnte diese Eingabe gerade nicht verarbeiten. Bitte versuchen Sie es erneut oder starten Sie die Demo neu.","cora"),180);
- }finally{
-  setTimeout(()=>{if(demoSend)demoSend.disabled=false;demoInput?.focus({preventScroll:true});},220);
+   console.error("Cora demo error:",err);
+   result="Die Demo konnte diese Eingabe gerade nicht verarbeiten. Bitte versuchen Sie es erneut.";
  }
+
+ const cta=/cora.?anfrage|anfrage.*formular|hinterlassen.*kontaktdaten/i.test(result);
+ setTimeout(()=>addMessage(result,"cora",cta?"Cora-Anfrage starten":null),180);
+ setTimeout(()=>{
+   if(demoSend)demoSend.disabled=false;
+   demoInput?.focus({preventScroll:true});
+ },240);
+}
+
+function resetDemo(){
+ try{sessionStorage.removeItem(STATE_KEY);}catch(err){}
+ state.industry=null;
+ state.turns=0;
+ state.stage="discovery";
+ state.profile={goal:null,service:null,need:null,location:null,timing:null,contactIntent:null,answers:[]};
+ state.conversation={leadMode:false,questionIndex:0};
+ if(demoMessages)demoMessages.innerHTML='<div class="msg cora">Hallo. Ich bin Cora. Testen Sie mich mit einer Frage.</div>';
+ demoInput?.focus({preventScroll:true});
 }
 
 window.coraSubmitDemoQuestion=function(event){
- if(event){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation?.();}
+ if(event){
+   event.preventDefault();
+   event.stopPropagation();
+   event.stopImmediatePropagation?.();
+ }
  const value=demoInput?.value||"";
  if(!value.trim()||demoSend?.disabled)return;
  demoInput.value="";
  runDemo(value);
 };
+
 demoSend?.addEventListener("click",window.coraSubmitDemoQuestion);
-demoInput?.addEventListener("keydown",e=>{if(e.key==="Enter")window.coraSubmitDemoQuestion(e);});
+demoInput?.addEventListener("keydown",e=>{
+ if(e.key==="Enter"){
+   e.preventDefault();
+   window.coraSubmitDemoQuestion(e);
+ }
+});
+
 document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>runDemo(b.dataset.prompt)));
 
 const menuBtn=$("menuBtn"),mobileNav=$("mobileNav");
