@@ -36,6 +36,7 @@ const intents=[
  {id:"DENTAL",p:["zahnarzt","zahn","zahnarztpraxis","behandlung","zahnschmerzen"]},
  {id:"FITNESS",p:["fitness","fitnessstudio","mitgliedschaft","probetraining","kurs","personal training"]},
  {id:"TAX_ADVISOR",p:["steuerberater","steuerberatung","steuerkanzlei"]},
+ {id:"BEAUTY",p:["kosmetiksalon","kosmetik","beauty","beautysalon","nagelstudio","friseursalon","friseur","ästhetik","aesthetik","wimpern","gesichtsbehandlung"]},
  {id:"SHK",p:["sanitär","sanitaer","heizung","heizungsbau","heizungsbauer","heizungstechnik","shk","wärmepumpe","waermepumpe","klima","klimatechnik","bad","badsanierung","wasserinstallation","gasinstallation"]},
  {id:"CRAFT",p:["handwerk","handwerker","meisterbetrieb","projektanfrage","elektriker","maler","installateur","bauunternehmen"]}
 ];
@@ -112,8 +113,11 @@ const industryResponses={
   flow:["Geht es um private oder unternehmerische Steuerfragen?","Welche Leistung wird ungefähr benötigt?","Handelt es sich um eine neue Anfrage oder einen bestehenden Mandanten?","Wie können wir Sie erreichen?"],
   lead:"Individuelle Steuerberatung sollte weiterhin durch die zuständige Fachperson erfolgen."
  },
- CRAFT:{
-  intro:"Für Handwerksbetriebe kann Cora aus einer kurzen Problembeschreibung eine strukturierte Projektanfrage entwickeln.",
+ BEAUTY:{
+  intro:"Für einen Kosmetiksalon kann Cora Website-Besucher gezielt zu passenden Behandlungen führen, Wünsche und Bedarf erfassen und daraus qualifizierte Termin- und Beratungsanfragen entwickeln.",
+  capabilities:["Behandlungen und Leistungen verständlich erklären","Interesse an konkreten Behandlungen erkennen","Wünsche, Ziel und relevante Anforderungen erfassen","zwischen Erstberatung, Terminwunsch und konkreter Behandlung unterscheiden","Termin- und Rückrufanfragen vorqualifizieren","Kontaktdaten für einen verwertbaren Lead aufnehmen"],
+  flow:["Welche Behandlung oder welches Ergebnis interessiert Sie?","Geht es um eine konkrete Behandlung oder möchten Sie zunächst beraten werden?","Was ist Ihnen dabei besonders wichtig, zum Beispiel Hautbild, Haarentfernung, Nägel oder Ästhetik?","Wann wäre ein passender Zeitraum für einen Termin?","Wie können wir Sie für die Terminabstimmung erreichen?"],
+  lead:"Der Mehrwert liegt darin, dass Cora nicht nur Fragen beantwortet: Sie erkennt das konkrete Interesse, führt den Besucher zur passenden nächsten Aktion und übergibt dem Salon eine bereits strukturierte Anfrage."\n },\n CRAFT:{\n  intro:"Für Handwerksbetriebe kann Cora aus einer kurzen Problembeschreibung eine strukturierte Projektanfrage entwickeln.",
   capabilities:["Leistungen erklären","Projektart und Umfang erfassen","Objekt und Standort abfragen","Zeitraum und Dringlichkeit erfassen","Rückruf- und Angebotsanfragen vorbereiten"],
   flow:["Welche Arbeit soll durchgeführt werden?","Geht es um Neubau, Modernisierung, Wartung oder Reparatur?","Wo befindet sich das Objekt?","Wann soll die Arbeit ungefähr stattfinden?"],
   lead:"So erhält der Betrieb vor dem ersten Rückruf bereits die wichtigsten Informationen."
@@ -126,7 +130,7 @@ function normalize(t){
 
 function detectIndustry(q){
  const t=normalize(q);
- const ordered=["SHK","FITNESS","AUTOHAUS","RESTAURANT","HOTEL","REAL_ESTATE","LAW_FIRM","DENTAL","TAX_ADVISOR","CRAFT"];
+ const ordered=["BEAUTY","SHK","FITNESS","AUTOHAUS","RESTAURANT","HOTEL","REAL_ESTATE","LAW_FIRM","DENTAL","TAX_ADVISOR","CRAFT"];
  for(const id of ordered){
   const found=intents.find(x=>x.id===id);
   if(found&&found.p.some(k=>t.includes(normalize(k))))return id;
