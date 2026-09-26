@@ -98,7 +98,7 @@ function remember(text){
  const raw=String(text||"").trim(),t=normalize(raw);
  const industry=detectIndustry(raw);
  if(industry){state.industry=industry;state.companyType=industryLabels[industry]||industry;}
- const city=raw.match(/\\b(in|aus|bei)\\s+([A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]+(?:\\s+[A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]+)?)\\b/);
+ const city=raw.match(/\b(in|aus|bei)\s+([A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]+(?:\s+[A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]+)?)\b/);
  if(city)state.profile.location=city[2];
  if(/klein|kleine|kleiner|mitarbeiter|mitarbeitende/.test(t))state.companySize=raw;
  if(/b2b|geschäftskunden|geschaeftskunden|firmenkunden|wiederverkaeufer|haendler|händler/.test(t))state.customerType=raw;
