@@ -4,7 +4,7 @@ const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbzDrLyFEsCVSVqLph
 const $=id=>document.getElementById(id);
 const demoMessages=$("demoMessages"),demoInput=$("demoInput"),demoSend=$("demoSend");
 const STATE_KEY="cora_demo_state_v4";
-const state={industry:null,turns:0,stage:"discovery",profile:{goal:null,service:null,need:null,location:null,timing:null,contactIntent:null,answers:[]},conversation:{leadMode:false,questionIndex:0}};
+const state={industry:null,companyType:null,companySize:null,customerType:null,turns:0,stage:"discovery",profile:{goal:null,service:null,need:null,location:null,timing:null,contactIntent:null,leadIntent:null,answers:[]},conversation:{leadMode:false,questionIndex:0}};
 function restoreState(){
  try{
   const saved=sessionStorage.getItem(STATE_KEY);
@@ -26,7 +26,7 @@ function persistState(){
 }
 restoreState();
 
-const industryLabels={WHOLESALE_MOBILE:"Mobilfunk-Großhandel",BEAUTY:"Kosmetiksalon",FITNESS:"Fitnessstudio",SHK:"SHK-/Sanitär-/Heizungsbetrieb",RESTAURANT:"Restaurant",HOTEL:"Hotel",AUTOHAUS:"Autohaus",REAL_ESTATE:"Immobilienunternehmen",LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",TAX_ADVISOR:"Steuerberatung",CRAFT:"Handwerksbetrieb"};
+const industryLabels={WHOLESALE_MOBILE:"Mobilfunk-Großhandel",BEAUTY:"Kosmetiksalon / Beauty",FITNESS:"Fitnessstudio",SHK:"SHK-/Sanitär-/Heizungsbetrieb",RESTAURANT:"Restaurant / Café",HOTEL:"Hotel",AUTOHAUS:"Autohaus / Kfz",REAL_ESTATE:"Immobilienunternehmen",LAW_FIRM:"Kanzlei",DENTAL:"Zahnarztpraxis",TAX_ADVISOR:"Steuerberatung",CRAFT:"Handwerksbetrieb",PHYSIO:"Physiotherapie",DOCTOR:"Arztpraxis",AGENCY:"Agentur / Beratung",SOFTWARE:"Software / IT / SaaS",ECOMMERCE:"E-Commerce",RETAIL:"Einzelhandel",EDUCATION:"Bildung",COACHING:"Coaching",LOGISTICS:"Logistik / Spedition"};
 
 const industryData={
 WHOLESALE_MOBILE:{
@@ -71,9 +71,24 @@ function detectIndustry(text){
   LAW_FIRM:["kanzlei","rechtsanwalt","anwalt","anwaltskanzlei","rechtsberatung","rechtsanwaltskanzlei"],
   DENTAL:["zahnarzt","zahnarztpraxis","zahnmedizin","zahnarztzentrum","zahnklinik","zahnbehandlung"],
   TAX_ADVISOR:["steuerberater","steuerberatung","steuerkanzlei","steuerberaterkanzlei","steuerbuero","buchhaltungsbuero"],
-  CRAFT:["handwerksbetrieb","handwerker","handwerksunternehmen","meisterbetrieb","elektriker","elektrobetrieb","maler","bauunternehmen","dachdecker","tischler","schreiner","metallbauer"]
+  CRAFT:["handwerksbetrieb","handwerker","handwerksunternehmen","meisterbetrieb","elektriker","elektrobetrieb","maler","bauunternehmen","dachdecker","tischler","schreiner","metallbauer","installateur","sanitaer","heizung","zimmerer","trockenbau"], 
+  PHYSIO:["physiotherapie","physio","physiotherapeut","physiopraxis","krankengymnastik"], 
+  DOCTOR:["arztpraxis","arzt","hausarzt","facharzt","praxis","medizinisches zentrum"], 
+  AGENCY:["agentur","marketingagentur","werbeagentur","digitalagentur","consulting","beratung"], 
+  SOFTWARE:["software","saas","softwareunternehmen","it unternehmen","it dienstleister","webagentur","entwickler"], 
+  ECOMMERCE:["e commerce","ecommerce","onlineshop","online shop","webshop"], 
+  RETAIL:["einzelhandel","fachhandel","laden","geschäft","geschaeft","store"], 
+  EDUCATION:["bildung","schule","akademie","weiterbildung","sprachschule","nachhilfe"], 
+  COACHING:["coaching","coach","mentoring","trainer"], 
+  LOGISTICS:["logistik","spedition","transport","fuhrunternehmen","lagerlogistik"]
  };
  for(const [id,words] of Object.entries(patterns)){if(words.some(w=>t.includes(normalize(w))))return id;}
+ if(/fitness|gym|muckibude|training|probetraining|mitglied/.test(t))return "FITNESS";
+ if(/physio|krankengymnastik/.test(t))return "PHYSIO";
+ if(/zahnarzt|zahnmedizin/.test(t))return "DENTAL";
+ if(/restaurant|cafe|gastronomie|reservier|speisekarte/.test(t))return "RESTAURANT";
+ if(/makler|immobilien|besichtigung|wohnung|grundstueck/.test(t))return "REAL_ESTATE";
+ if(/autohaus|autowerkstatt|fahrzeug|probefahrt|leasing/.test(t))return "AUTOHAUS";
  if(/gross|aussenhandel|grosshandel|grosshaendler/.test(t)&&/mobilfunk|monilfunk|telekommunikation|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
  if(/mobilfunk|monilfunk|telekommunikation/.test(t)&&/handel|haendler|gross|zubehoer|smartphone|handy/.test(t))return "WHOLESALE_MOBILE";
  return null;
@@ -82,8 +97,15 @@ function detectIndustry(text){
 function remember(text){
  const raw=String(text||"").trim(),t=normalize(raw);
  const industry=detectIndustry(raw);
- if(industry)state.industry=industry;
- if(/qualifizierte kundenkontakte|qualifizierte kunden|qualifizierte leads|qualifizierten kunden|kundenkontakte|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|mehr lead|anfragen gewinnen|leads sammeln|lead sammeln|lead sammlen|leadgenerierung|lead generieren/.test(t))state.profile.goal="mehr qualifizierte Kundenkontakte";
+ if(industry){state.industry=industry;state.companyType=industryLabels[industry]||industry;}
+ const city=raw.match(/\\b(in|aus|bei)\\s+([A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]+(?:\\s+[A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]+)?)\\b/);
+ if(city)state.profile.location=city[2];
+ if(/klein|kleine|kleiner|mitarbeiter|mitarbeitende/.test(t))state.companySize=raw;
+ if(/b2b|geschäftskunden|geschaeftskunden|firmenkunden|wiederverkaeufer|haendler|händler/.test(t))state.customerType=raw;
+ if(/qualifizierte kundenkontakte|qualifizierte kunden|qualifizierte leads|qualifizierten kunden|kundenkontakte|mehr kunden|mehr anfragen|mehr termine|kunden gewinnen|neue kunden|mehr leads|mehr lead|anfragen gewinnen|leads sammeln|lead sammeln|lead sammlen|leadgenerierung|lead generieren/.test(t)){state.profile.goal="mehr qualifizierte Kundenkontakte";state.profile.leadIntent="high";}
+ if(/faq|standardfragen|wiederkehrende fragen|immer dieselben fragen/.test(t))state.profile.goal="FAQ-/Standardfragen automatisieren";
+ if(/telefon|klingelt|ausserhalb|außerhalb|24.?7|nachts/.test(t))state.profile.goal="Anfragen auch außerhalb der Öffnungszeiten bearbeiten";
+ if(/termin|beratung/.test(t))state.profile.contactIntent="Termin / Beratung";
  if(/geschaeftsfuehrer|geschaeftsfuhrer|inhaber|chef|einkauf|einkaeufer|vertrieb|sales|marketing/.test(t))state.profile.role=raw;
  if(/händler|haendler|wiederverkaeufer|wiederverkäufer|reseller|grosshaendler/.test(t))state.profile.customerType=raw;
  if(/angebot|bestellung|bestellen|kaufen|einkauf|bedarf|lieferung|kondition|preis/.test(t))state.profile.intent=raw;
